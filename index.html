@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bayblade Arena 2D</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #07071a;
+      color: #d8d8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 10px 24px;
+      background: linear-gradient(90deg, #0e0e2a, #141430);
+      border-bottom: 1px solid #2a2a55;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #5577ff, #ff5577, #ffaa44);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #game-state-label {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: #6666aa;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    #main {
+      display: flex;
+      gap: 18px;
+      padding: 16px;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1160px;
+    }
+
+    #canvas-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    canvas {
+      display: block;
+      border-radius: 14px;
+      box-shadow: 0 0 60px rgba(80, 100, 255, 0.12), 0 0 0 1px #1a1a44;
+    }
+
+    #winner-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      background: rgba(4, 4, 18, 0.78);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      backdrop-filter: blur(2px);
+    }
+    #winner-overlay.visible { display: flex; }
+
+    #winner-text {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-shadow: 0 0 40px currentColor;
+      text-transform: uppercase;
+    }
+    #winner-sub { font-size: 0.9rem; color: #9999cc; }
+
+    /* ── sidebar ── */
+    #sidebar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 230px;
+      max-width: 280px;
+    }
+
+    .panel {
+      background: #0d0d22;
+      border: 1px solid #252545;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .panel-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: #5555aa;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    /* ── bayblade card ── */
+    .bay-card {
+      border-radius: 8px;
+      padding: 11px;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+      transition: border-color 0.3s;
+    }
+    .bay-card:last-child { margin-bottom: 0; }
+
+    .bay-header {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 9px;
+    }
+
+    .bay-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .bay-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .bay-ability-icon {
+      font-size: 0.95rem;
+    }
+
+    /* health bar */
+    .hp-track {
+      background: #181830;
+      border-radius: 5px;
+      height: 7px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .hp-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.15s;
+    }
+    .hp-text { font-size: 0.72rem; color: #7777aa; margin-bottom: 7px; }
+
+    /* cooldown bar */
+    .cd-row { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+    .cd-label { font-size: 0.68rem; color: #6666aa; width: 52px; flex-shrink: 0; }
+    .cd-track { flex: 1; background: #181830; border-radius: 3px; height: 4px; overflow: hidden; }
+    .cd-fill  { height: 100%; border-radius: 3px; transition: width 0.1s; }
+
+    /* ability select */
+    .ability-select {
+      width: 100%;
+      background: #131330;
+      border: 1px solid #333366;
+      border-radius: 6px;
+      color: #d0d0f8;
+      padding: 5px 9px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    .ability-select:focus  { border-color: #5577cc; }
+    .ability-select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* status chips */
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-height: 20px;
+    }
+    .chip {
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* controls */
+    .ctrl-row { display: flex; gap: 8px; }
+
+    button {
+      flex: 1;
+      padding: 9px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    button:hover { opacity: 0.88; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    #btn-start {
+      background: linear-gradient(135deg, #4455ee, #8844ee);
+      color: #fff;
+    }
+    #btn-reset {
+      background: #1e1e40;
+      color: #9999cc;
+      flex: 0 0 auto;
+      padding: 9px 12px;
+    }
+
+    /* legend */
+    .legend-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 0.78rem;
+    }
+    .legend-entry:last-child { margin-bottom: 0; }
+    .legend-icon-box {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    .legend-entry-name { font-weight: 700; color: #ccccee; margin-bottom: 2px; }
+    .legend-entry-desc { color: #7777aa; font-size: 0.7rem; line-height: 1.35; }
+
+    /* add-bayblade placeholder */
+    #add-bay-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed #2a2a55;
+      color: #5555aa;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      flex: none;
+    }
+    #add-bay-btn:hover { border-color: #5577cc; color: #8899dd; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Bayblade Arena</h1>
+  <div id="game-state-label">Ready</div>
+</header>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <canvas id="arena" width="640" height="640"></canvas>
+    <div class="winner-overlay" id="winner-overlay">
+      <div id="winner-text">—</div>
+      <div id="winner-sub" class="winner-sub">Click Play Again to restart</div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <!-- Bay cards injected by JS -->
+    <div class="panel" id="bay-cards-panel">
+      <div class="panel-title">Fighters</div>
+      <div id="bay-cards"></div>
+      <button id="add-bay-btn">+ Add Bayblade (coming soon)</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Controls</div>
+      <div class="ctrl-row">
+        <button id="btn-start">▶ Start Battle</button>
+        <button id="btn-reset" title="Reset">↺</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Ability Guide</div>
+      <div id="ability-legend"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════
+   MATH UTILITIES
+═══════════════════════════════════════════════════ */
+
+class Vec2 {
+  constructor(x = 0, y = 0) { this.x = x; this.y = y; }
+  add(v)    { return new Vec2(this.x + v.x, this.y + v.y); }
+  sub(v)    { return new Vec2(this.x - v.x, this.y - v.y); }
+  scale(s)  { return new Vec2(this.x * s,   this.y * s);   }
+  dot(v)    { return this.x * v.x + this.y * v.y; }
+  len()     { return Math.sqrt(this.x * this.x + this.y * this.y); }
+  lenSq()   { return this.x * this.x + this.y * this.y; }
+  normalize() {
+    const l = this.len();
+    return l > 1e-9 ? this.scale(1 / l) : new Vec2(1, 0);
+  }
+  reflect(n) { return this.sub(n.scale(2 * this.dot(n))); }
+  distTo(v)  { return this.sub(v).len(); }
+  clone()    { return new Vec2(this.x, this.y); }
+  perp()     { return new Vec2(-this.y, this.x); }
+  static fromAngle(a) { return new Vec2(Math.cos(a), Math.sin(a)); }
+  static lerp(a, b, t) { return a.add(b.sub(a).scale(t)); }
+  static random() { return Vec2.fromAngle(Math.random() * Math.PI * 2); }
+}
+
+const rng = {
+  range:  (a, b) => a + Math.random() * (b - a),
+  pick:   arr => arr[Math.floor(Math.random() * arr.length)],
+  chance: p => Math.random() < p,
+  int:    (a, b) => Math.floor(rng.range(a, b + 1)),
+};
+
+/* ═══════════════════════════════════════════════════
+   PARTICLE SYSTEM
+═══════════════════════════════════════════════════ */
+
+class Particle {
+  constructor({ pos, vel, color, life, size, alpha = 1 }) {
+    this.pos   = pos.clone();
+    this.vel   = vel.clone();
+    this.color = color;
+    this.life  = life;
+    this.max   = life;
+    this.size  = size;
+    this.alpha = alpha;
+  }
+  get t() { return this.life / this.max; }
+  get alive() { return this.life > 0; }
+  update(dt) {
+    this.pos  = this.pos.add(this.vel.scale(dt));
+    this.vel  = this.vel.scale(Math.max(0, 1 - dt * 3.5));
+    this.life -= dt;
+  }
+  render(ctx) {
+    ctx.globalAlpha = this.t * this.alpha;
+    ctx.fillStyle   = this.color;
+    ctx.beginPath();
+    ctx.arc(this.pos.x, this.pos.y, Math.max(0.3, this.size * this.t), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+class ParticleSystem {
+  constructor() { this.list = []; }
+
+  emit(count, opts) {
+    for (let i = 0; i < count; i++) {
+      const angle = opts.angle !== undefined
+        ? opts.angle + rng.range(-(opts.spread ?? Math.PI), opts.spread ?? Math.PI)
+        : Math.random() * Math.PI * 2;
+      const speed = (opts.speed ?? 120) * rng.range(0.5, 1.5);
+      const vel   = Vec2.fromAngle(angle).scale(speed).add(opts.baseVel ?? new Vec2());
+      this.list.push(new Particle({
+        pos:   opts.pos,
+        vel,
+        color: Array.isArray(opts.color) ? rng.pick(opts.color) : opts.color,
+        life:  rng.range(opts.minLife ?? 0.3, opts.maxLife ?? 0.8),
+        size:  rng.range(opts.minSize ?? 2,   opts.maxSize ?? 6),
+        alpha: opts.alpha ?? 1,
+      }));
+    }
+  }
+
+  update(dt) { this.list = this.list.filter(p => { p.update(dt); return p.alive; }); }
+  render(ctx) { this.list.forEach(p => p.render(ctx)); }
+}
+
+/* ═══════════════════════════════════════════════════
+   PROJECTILE BASE
+═══════════════════════════════════════════════════ */
+
+class Projectile {
+  constructor(pos, vel, owner) {
+    this.pos    = pos.clone();
+    this.vel    = vel.clone();
+    this.owner  = owner;
+    this.active = true;
+    this.age    = 0;
+  }
+  update(_dt, _arena, _targets, _ps) {}
+  render(_ctx) {}
+  onDeactivate() {}
+}
+
+/* ═══════════════════════════════════════════════════
+   HARPOON PROJECTILE
+═══════════════════════════════════════════════════ */
+
+class HarpoonProjectile extends Projectile {
+  constructor(pos, vel, owner, cfg = {}) {
+    super(pos, vel, owner);
+    this.maxBounces   = cfg.maxBounces   ?? 7;
+    this.maxAge       = cfg.maxAge       ?? 9;
+    this.hitDamage    = cfg.hitDamage    ?? 15;
+    this.slamDamage   = cfg.slamDamage   ?? 40;
+    this.retractSpeed = cfg.retractSpeed ?? 420;
+    this.bounces      = 0;
+    this.attached     = null;   // Bayblade being dragged back
+    this.retracting   = false;
+    this.trail        = [];
+    this.trailMax     = 22;
+  }
+
+  update(dt, arena, targets, ps) {
+    this.age += dt;
+    if (this.age > this.maxAge && !this.retracting) {
+      this.active = false;
+      return;
+    }
+
+    if (this.retracting) {
+      this._retract(dt, arena, ps);
+    } else {
+      this._fly(dt, arena, targets, ps);
+    }
+
+    this.trail.push(this.pos.clone());
+    if (this.trail.length > this.trailMax) this.trail.shift();
+  }
+
+  _fly(dt, arena, targets, ps) {
+    this.pos = this.pos.add(this.vel.scale(dt));
+
+    // Bounce off circular wall
+    const fromCenter = this.pos.sub(arena.center);
+    if (fromCenter.len() >= arena.radius - 5) {
+      const n    = fromCenter.normalize();
+      this.vel   = this.vel.reflect(n);
+      this.pos   = arena.center.add(n.scale(arena.radius - 6));
+      this.bounces++;
+
+      ps.emit(6, {
+        pos: this.pos, color: ['#88aaff', '#ccddff', '#ffffff'],
+        speed: 70, minSize: 1, maxSize: 3, minLife: 0.15, maxLife: 0.4,
+      });
+
+      if (this.bounces > this.maxBounces) { this.active = false; return; }
+    }
+
+    // Hit detection
+    for (const t of targets) {
+      if (t === this.owner || !t.alive || t.caughtBy) continue;
+      if (this.pos.distTo(t.pos) < t.radius + 7) {
+        t.takeDamage(this.hitDamage, 'harpoon', this.owner);
+        this.attached  = t;
+        this.retracting = true;
+        t.caughtBy     = this;
+        ps.emit(18, {
+          pos: t.pos, color: ['#88aaff', '#ffffff', '#ffdd88'],
+          speed: 200, minSize: 2, maxSize: 5, minLife: 0.25, maxLife: 0.65,
+        });
+        break;
+      }
+    }
+  }
+
+  _retract(dt, _arena, ps) {
+    if (!this.attached || !this.attached.alive) {
+      if (this.attached) this.attached.caughtBy = null;
+      this.attached = null;
+      this.active   = false;
+      return;
+    }
+
+    const toOwner = this.owner.pos.sub(this.pos);
+    const dist    = toOwner.len();
+    const slam    = this.owner.radius + this.attached.radius + 4;
+
+    if (dist < slam) {
+      // SLAM!
+      this.attached.takeDamage(this.slamDamage, 'slam', this.owner);
+      this.attached.vel  = toOwner.normalize().scale(-180);
+      this.attached.caughtBy = null;
+      ps.emit(35, {
+        pos: this.owner.pos,
+        color: ['#ffaa33', '#ff6633', '#ffffff', '#ffee77'],
+        speed: 320, minSize: 3, maxSize: 9, minLife: 0.35, maxLife: 1.0,
+      });
+      this.attached = null;
+      this.active   = false;
+      return;
+    }
+
+    // Move harpoon tip toward owner; target follows
+    this.vel = toOwner.normalize().scale(this.retractSpeed);
+    this.pos = this.pos.add(this.vel.scale(dt));
+    this.attached.pos = this.pos.clone();
+  }
+
+  onDeactivate() {
+    if (this.attached) { this.attached.caughtBy = null; this.attached = null; }
+  }
+
+  render(ctx) {
+    if (!this.active) return;
+
+    // Rope when retracting
+    if (this.retracting && this.attached) {
+      ctx.save();
+      ctx.setLineDash([7, 5]);
+      ctx.strokeStyle = '#6699ff';
+      ctx.lineWidth   = 2.5;
+      ctx.globalAlpha = 0.65;
+      ctx.beginPath();
+      ctx.moveTo(this.owner.pos.x, this.owner.pos.y);
+      ctx.lineTo(this.attached.pos.x, this.attached.pos.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
+
+    // Trail
+    if (this.trail.length > 1) {
+      ctx.save();
+      for (let i = 1; i < this.trail.length; i++) {
+        const t = i / this.trail.length;
+        ctx.globalAlpha = t * 0.55;
+        ctx.strokeStyle = '#5588ff';
+        ctx.lineWidth   = t * 3;
+        ctx.lineCap     = 'round';
+        ctx.beginPath();
+        ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
+        ctx.lineTo(this.trail[i].x,     this.trail[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Tip glow
+    const g = ctx.createRadialGradient(this.pos.x, this.pos.y, 0, this.pos.x, this.pos.y, 12);
+    g.addColorStop(0, '#aaccff');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(this.pos.x, this.pos.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tip core
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(this.pos.x, this.pos.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   BLADE STORM PROJECTILE  (burst AoE visual ring)
+═══════════════════════════════════════════════════ */
+
+class StormRing extends Projectile {
+  constructor(pos, owner, cfg = {}) {
+    super(pos, new Vec2(), owner);
+    this.maxRadius  = cfg.range ?? 130;
+    this.currentR   = owner.radius;
+    this.expandRate = 280;
+    this.damage     = cfg.damage ?? 28;
+    this.damagedSet = new Set();
+    this.maxAge     = this.maxRadius / this.expandRate + 0.05;
+  }
+
+  update(dt, _arena, targets, ps) {
+    this.age += dt;
+    this.currentR += this.expandRate * dt;
+
+    // Damage targets as ring passes through them
+    for (const t of targets) {
+      if (t === this.owner || !t.alive || this.damagedSet.has(t)) continue;
+      const d = t.pos.distTo(this.pos);
+      if (d <= this.currentR + t.radius && d >= this.currentR - t.radius - 10) {
+        t.takeDamage(this.damage, 'storm', this.owner);
+        this.damagedSet.add(t);
+        ps.emit(15, {
+          pos: t.pos, color: ['#ffaa00', '#ff6600', '#ffee44'],
+          speed: 180, minSize: 2, maxSize: 6, minLife: 0.2, maxLife: 0.55,
+        });
+      }
+    }
+
+    if (this.age >= this.maxAge) this.active = false;
+  }
+
+  render(ctx) {
+    if (!this.active) return;
+    const alpha = 1 - this.age / this.maxAge;
+    ctx.save();
+    ctx.globalAlpha  = alpha * 0.75;
+    ctx.strokeStyle  = '#ffaa00';
+    ctx.lineWidth    = 4;
+    ctx.shadowColor  = '#ffaa00';
+    ctx.shadowBlur   = 14;
+    ctx.beginPath();
+    ctx.arc(this.pos.x, this.pos.y, this.currentR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PARASITE  (visual entity that orbits a host)
+═══════════════════════════════════════════════════ */
+
+class Parasite {
+  constructor(host, index) {
+    this.orbitAngle  = Math.random() * Math.PI * 2;
+    this.orbitRadius = host.radius + 9 + (index % 4) * 5;
+    this.orbitSpeed  = (2.5 + Math.random() * 2) * (Math.random() < 0.5 ? 1 : -1);
+    this.size        = 3 + Math.random() * 2;
+    this.phase       = Math.random() * Math.PI * 2;
+  }
+
+  update(dt) {
+    this.orbitAngle += this.orbitSpeed * dt;
+    this.phase      += dt * 5;
+  }
+
+  getPos(host) {
+    return host.pos.add(Vec2.fromAngle(this.orbitAngle).scale(this.orbitRadius));
+  }
+
+  render(ctx, host) {
+    const pos   = this.getPos(host);
+    const pulse = 0.65 + 0.35 * Math.sin(this.phase);
+    const r     = this.size * pulse;
+
+    // Tether to host
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = '#44ff99';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(host.pos.x, host.pos.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Glow halo
+    const g = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 4);
+    g.addColorStop(0, '#33ff88bb');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r * 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle   = '#33ff88';
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   ABILITY BASE CLASS
+   All special abilities extend this.
+═══════════════════════════════════════════════════ */
+
+class Ability {
+  /**
+   * @param {object} cfg
+   * cfg.name         {string}
+   * cfg.description  {string}
+   * cfg.color        {string}  hex
+   * cfg.icon         {string}  emoji
+   * cfg.cooldown     {number}  seconds between uses
+   * cfg.behaviorType {string}  'ranged' | 'aggressive' | 'standard'
+   */
+  constructor(cfg) {
+    this.name         = cfg.name         ?? 'Unknown';
+    this.description  = cfg.description  ?? '';
+    this.color        = cfg.color        ?? '#8888ff';
+    this.icon         = cfg.icon         ?? '?';
+    this.cooldown     = cfg.cooldown     ?? 3;
+    this.behaviorType = cfg.behaviorType ?? 'standard';
+    this.cdTimer      = 0;
+    this.owner        = null;
+    this._cfg         = cfg;
+  }
+
+  attachTo(bayblade) { this.owner = bayblade; }
+
+  canActivate() { return this.cdTimer <= 0; }
+
+  get cdFraction() { return Math.max(0, Math.min(1, this.cdTimer / this.cooldown)); }
+
+  update(dt) { if (this.cdTimer > 0) this.cdTimer -= dt; }
+
+  /** Called by AI on its activation timer. Ability decides if/how to fire. */
+  tryActivate(_targets, _projectiles, _arena, _ps) {}
+
+  /** Called by Game when owner physically collides with another Bayblade. */
+  onCollision(_other, _ps) {}
+}
+
+/* ═══════════════════════════════════════════════════
+   HARPOON ABILITY
+═══════════════════════════════════════════════════ */
+
+class HarpoonAbility extends Ability {
+  constructor(cfg = {}) {
+    super({
+      name: 'Harpoon', icon: '⚓',
+      color: '#4488ff',
+      description: 'Fires a bouncing harpoon that hooks an opponent and slings them back into a slam.',
+      cooldown: cfg.cooldown ?? 4.5,
+      behaviorType: 'ranged',
+      ...cfg,
+    });
+    this.projectileSpeed = cfg.projectileSpeed ?? 520;
+    this.hasLive         = false; // only one harpoon at a time
+  }
+
+  tryActivate(targets, projectiles, _arena, _ps) {
+    if (!this.canActivate() || this.hasLive) return;
+
+    const enemies = targets.filter(t => t !== this.owner && t.alive && !t.caughtBy);
+    if (!enemies.length) return;
+
+    const target = enemies.reduce((a, b) =>
+      a.pos.distTo(this.owner.pos) < b.pos.distTo(this.owner.pos) ? a : b);
+
+    const dir = target.pos.sub(this.owner.pos).normalize();
+    const p   = new HarpoonProjectile(
+      this.owner.pos.clone(),
+      dir.scale(this.projectileSpeed),
+      this.owner,
+      this._cfg,
+    );
+    p._abilityRef = this;
+    projectiles.push(p);
+    this.cdTimer  = this.cooldown;
+    this.hasLive  = true;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PARASITE ABILITY
+═══════════════════════════════════════════════════ */
+
+class ParasiteAbility extends Ability {
+  constructor(cfg = {}) {
+    super({
+      name: 'Parasite', icon: '🦠',
+      color: '#33ff88',
+      description: 'Each collision infects the opponent with a new parasite that permanently poisons them.',
+      cooldown: cfg.cooldown ?? 0.7, // per-collision gate
+      behaviorType: 'aggressive',
+      ...cfg,
+    });
+    this.dpsPerParasite = cfg.dpsPerParasite ?? 3;
+    this.maxParasites   = cfg.maxParasites   ?? 9;
+  }
+
+  tryActivate() {} // passive — fires from onCollision
+
+  onCollision(other, ps) {
+    if (!this.canActivate()) return;
+    if (other.parasites.length >= this.maxParasites) return;
+
+    const idx = other.parasites.length;
+    other.parasites.push(new Parasite(other, idx));
+    other.poisonDPS = other.parasites.length * this.dpsPerParasite;
+    this.cdTimer    = this.cooldown;
+
+    ps?.emit(10, {
+      pos: other.pos, color: ['#33ff88', '#88ffbb', '#aaffdd'],
+      speed: 110, minSize: 2, maxSize: 4, minLife: 0.25, maxLife: 0.55,
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   BLADE STORM ABILITY
+═══════════════════════════════════════════════════ */
+
+class BladeStormAbility extends Ability {
+  constructor(cfg = {}) {
+    super({
+      name: 'Blade Storm', icon: '🌀',
+      color: '#ffaa00',
+      description: 'Erupts in an expanding energy ring that damages all nearby opponents.',
+      cooldown: cfg.cooldown ?? 5,
+      behaviorType: 'aggressive',
+      ...cfg,
+    });
+    this.range  = cfg.range  ?? 130;
+    this.damage = cfg.damage ?? 28;
+  }
+
+  tryActivate(targets, projectiles, _arena, ps) {
+    if (!this.canActivate()) return;
+
+    const close = targets.filter(t =>
+      t !== this.owner && t.alive &&
+      t.pos.distTo(this.owner.pos) < this.range + t.radius);
+
+    if (!close.length) return;
+
+    projectiles.push(new StormRing(this.owner.pos.clone(), this.owner, this._cfg));
+    this.cdTimer = this.cooldown;
+
+    ps?.emit(20, {
+      pos: this.owner.pos, color: ['#ffaa00', '#ff8800', '#ffee44'],
+      speed: 60, minSize: 2, maxSize: 5, minLife: 0.2, maxLife: 0.5,
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   ABILITY REGISTRY
+   New abilities can be added here without touching
+   any other code.
+═══════════════════════════════════════════════════ */
+
+const AbilityRegistry = (() => {
+  const map = {};
+  return {
+    register(key, factory, meta) {
+      map[key] = { factory, key, ...meta };
+    },
+    create(key) {
+      if (!map[key]) throw new Error(`Unknown ability: ${key}`);
+      return map[key].factory();
+    },
+    getAll() {
+      return Object.values(map);
+    },
+  };
+})();
+
+AbilityRegistry.register('harpoon', () => new HarpoonAbility(), {
+  name: 'Harpoon', icon: '⚓', color: '#4488ff',
+  description: 'Bouncing harpoon — hooks & slams opponent',
+});
+AbilityRegistry.register('parasite', () => new ParasiteAbility(), {
+  name: 'Parasite', icon: '🦠', color: '#33ff88',
+  description: 'Contact infection — stacking permanent poison',
+});
+AbilityRegistry.register('bladeStorm', () => new BladeStormAbility(), {
+  name: 'Blade Storm', icon: '🌀', color: '#ffaa00',
+  description: 'Expanding energy ring — burst AoE damage',
+});
+
+/* ═══════════════════════════════════════════════════
+   ARENA
+═══════════════════════════════════════════════════ */
+
+class Arena {
+  constructor(cx, cy, radius) {
+    this.center = new Vec2(cx, cy);
+    this.radius = radius;
+    this._wallAngle = 0;
+  }
+
+  update(dt) { this._wallAngle += dt * 0.25; }
+
+  /** Push entity inside the arena, reflecting velocity. Returns true on contact. */
+  constrainEntity(entity) {
+    const from  = entity.pos.sub(this.center);
+    const dist  = from.len();
+    const limit = this.radius - entity.radius;
+    if (dist > limit) {
+      const n     = from.normalize();
+      entity.pos  = this.center.add(n.scale(limit));
+      entity.vel  = entity.vel.reflect(n).scale(0.82);
+      return true;
+    }
+    return false;
+  }
+
+  render(ctx) {
+    const { x, y } = this.center;
+    const R = this.radius;
+
+    // Dark floor
+    const floorG = ctx.createRadialGradient(x, y, 0, x, y, R);
+    floorG.addColorStop(0,   '#0e0e24');
+    floorG.addColorStop(0.7, '#0a0a1c');
+    floorG.addColorStop(1,   '#060614');
+    ctx.fillStyle = floorG;
+    ctx.beginPath();
+    ctx.arc(x, y, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Clipped grid
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.strokeStyle = '#15153a';
+    ctx.lineWidth   = 1;
+    const G = 44;
+    for (let gx = -R; gx <= R; gx += G) {
+      ctx.beginPath(); ctx.moveTo(x + gx, y - R); ctx.lineTo(x + gx, y + R); ctx.stroke();
+    }
+    for (let gy = -R; gy <= R; gy += G) {
+      ctx.beginPath(); ctx.moveTo(x - R, y + gy); ctx.lineTo(x + R, y + gy); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Concentric rings
+    for (let r = 70; r < R; r += 90) {
+      ctx.strokeStyle = '#ffffff07';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Animated wall
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = `rgba(60,90,255,${0.08 + i * 0.06})`;
+      ctx.lineWidth   = 4 - i;
+      ctx.beginPath();
+      ctx.arc(x, y, R - i * 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Spinning accent nodes
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(this._wallAngle);
+    const N = 16;
+    for (let i = 0; i < N; i++) {
+      const a  = (i / N) * Math.PI * 2;
+      const px = Math.cos(a) * R;
+      const py = Math.sin(a) * R;
+      ctx.fillStyle = i % 4 === 0 ? '#4466ff' : '#1a2266';
+      ctx.beginPath();
+      ctx.arc(px, py, i % 4 === 0 ? 5 : 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Outer glow ring
+    const outerG = ctx.createRadialGradient(x, y, R - 20, x, y, R + 28);
+    outerG.addColorStop(0, 'transparent');
+    outerG.addColorStop(0.5, 'rgba(55,80,220,0.18)');
+    outerG.addColorStop(1, 'transparent');
+    ctx.fillStyle = outerG;
+    ctx.beginPath();
+    ctx.arc(x, y, R + 28, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   BAYBLADE  — main entity
+═══════════════════════════════════════════════════ */
+
+class Bayblade {
+  /**
+   * @param {object} cfg
+   * cfg.name       {string}
+   * cfg.pos        {Vec2}
+   * cfg.color      {string}
+   * cfg.glowColor  {string}
+   * cfg.ability    {Ability}
+   * cfg.maxHealth  {number}
+   * cfg.blades     {number}  arm count, default 3
+   */
+  constructor(cfg) {
+    this.name      = cfg.name;
+    this.pos       = cfg.pos.clone();
+    this.vel       = Vec2.random().scale(rng.range(70, 130));
+    this.angle     = 0;
+    this.spinRate  = rng.range(9, 16);   // rad/s
+    this.radius    = 22;
+    this.color     = cfg.color;
+    this.glowColor = cfg.glowColor;
+    this.blades    = cfg.blades ?? 3;
+
+    this.maxHealth = cfg.maxHealth ?? 100;
+    this.health    = this.maxHealth;
+    this.alive     = true;
+
+    this.ability   = cfg.ability;
+    cfg.ability.attachTo(this);
+
+    this.parasites = [];
+    this.poisonDPS = 0;
+    this.caughtBy  = null;  // set by HarpoonProjectile when dragging
+
+    this.trail         = [];
+    this.trailMax      = 28;
+    this.hitFlash      = 0;
+    this.colCooldown   = 0;
+
+    // AI internal state
+    this._aiTimer    = rng.range(0.8, 2.5);
+    this._wanderAng  = Math.random() * Math.PI * 2;
+    this._wanderT    = 0;
+  }
+
+  update(dt, arena, others, projectiles, ps) {
+    if (!this.alive) return;
+
+    this.angle      += this.spinRate * dt;
+    this.hitFlash    = Math.max(0, this.hitFlash - dt * 5);
+    this.colCooldown = Math.max(0, this.colCooldown - dt);
+    this.ability.update(dt);
+
+    // Poison
+    if (this.poisonDPS > 0) {
+      this.takeDamage(this.poisonDPS * dt, 'poison', null);
+      if (rng.chance(dt * Math.min(this.parasites.length, 4) * 2.5)) {
+        ps.emit(1, {
+          pos: this.pos, color: '#33ff88',
+          speed: 35, minSize: 1, maxSize: 2.5, minLife: 0.4, maxLife: 1.0, alpha: 0.6,
+        });
+      }
+    }
+    this.parasites.forEach(p => p.update(dt));
+
+    // AI — only when not being dragged
+    if (!this.caughtBy) {
+      this._ai(dt, others, arena, projectiles, ps);
+      this.pos = this.pos.add(this.vel.scale(dt));
+      arena.constrainEntity(this);
+    }
+
+    this.trail.push(this.pos.clone());
+    if (this.trail.length > this.trailMax) this.trail.shift();
+
+    if (this.health <= 0 && this.alive) {
+      this.alive = false;
+      ps.emit(55, {
+        pos: this.pos,
+        color: [this.color, this.glowColor, '#ffffff', '#ffaa44'],
+        speed: 260, minSize: 3, maxSize: 11, minLife: 0.5, maxLife: 1.6,
+      });
+    }
+  }
+
+  _ai(dt, others, arena, projectiles, ps) {
+    const enemies = others.filter(o => o !== this && o.alive);
+    if (!enemies.length) return;
+
+    const nearest = enemies.reduce((a, b) =>
+      a.pos.distTo(this.pos) < b.pos.distTo(this.pos) ? a : b);
+
+    // Activation timer
+    this._aiTimer -= dt;
+    if (this._aiTimer <= 0) {
+      this.ability.tryActivate(enemies, projectiles, arena, ps);
+      this._aiTimer = rng.range(0.4, 1.8);
+    }
+
+    // Steering
+    const bt = this.ability.behaviorType;
+    if (bt === 'aggressive') {
+      const toward = nearest.pos.sub(this.pos).normalize().scale(185);
+      this.vel = Vec2.lerp(this.vel, toward, dt * 3.2);
+    } else if (bt === 'ranged') {
+      this._wanderT -= dt;
+      if (this._wanderT <= 0) {
+        this._wanderAng = Math.random() * Math.PI * 2;
+        this._wanderT   = rng.range(1.2, 3.0);
+      }
+      const wander    = Vec2.fromAngle(this._wanderAng).scale(130);
+      const toCenter  = arena.center.sub(this.pos);
+      const pull      = toCenter.len() > arena.radius * 0.55
+        ? toCenter.normalize().scale(170) : new Vec2();
+      this.vel = Vec2.lerp(this.vel, wander.add(pull), dt * 1.6);
+    } else {
+      // Standard: gentle orbit
+      const toC  = arena.center.sub(this.pos);
+      const perp = toC.perp().normalize().scale(140);
+      this.vel   = Vec2.lerp(this.vel, perp.add(toC.normalize().scale(40)), dt * 2);
+    }
+  }
+
+  takeDamage(amount, type, _source) {
+    if (!this.alive) return;
+    this.health = Math.max(0, this.health - amount);
+    if (type !== 'poison') this.hitFlash = 1;
+  }
+
+  onCollisionWith(other, ps) {
+    if (this.colCooldown > 0) return;
+    this.ability.onCollision(other, ps);
+    this.colCooldown = 0.28;
+  }
+
+  render(ctx) {
+    if (!this.alive) return;
+
+    // Motion trail
+    if (this.trail.length > 1) {
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (let i = 1; i < this.trail.length; i++) {
+        const t = i / this.trail.length;
+        ctx.globalAlpha = t * 0.22;
+        ctx.strokeStyle = this.glowColor;
+        ctx.lineWidth   = t * this.radius * 0.55;
+        ctx.beginPath();
+        ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
+        ctx.lineTo(this.trail[i].x,     this.trail[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Parasites (drawn behind blade)
+    this.parasites.forEach(p => p.render(ctx, this));
+
+    ctx.save();
+    ctx.translate(this.pos.x, this.pos.y);
+
+    // Outer ambient glow
+    const ambient = ctx.createRadialGradient(0, 0, this.radius * 0.4, 0, 0, this.radius * 2.8);
+    ambient.addColorStop(0, this.glowColor + '40');
+    ambient.addColorStop(1, 'transparent');
+    ctx.fillStyle = ambient;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 2.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hit flash
+    if (this.hitFlash > 0) {
+      const flash = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius * 2.2);
+      flash.addColorStop(0, `rgba(255,255,255,${this.hitFlash * 0.7})`);
+      flash.addColorStop(1, 'transparent');
+      ctx.fillStyle = flash;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Spinning body
+    ctx.rotate(this.angle);
+
+    for (let i = 0; i < this.blades; i++) {
+      ctx.save();
+      ctx.rotate((i / this.blades) * Math.PI * 2);
+
+      // Blade arm
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.moveTo(0, -4);
+      ctx.bezierCurveTo(
+        this.radius * 0.4, -12,
+        this.radius * 0.85, -11,
+        this.radius, -5,
+      );
+      ctx.arc(this.radius * 0.88, 0, 6, -Math.PI * 0.6, Math.PI * 0.6);
+      ctx.bezierCurveTo(
+        this.radius * 0.85, 11,
+        this.radius * 0.4, 12,
+        0, 4,
+      );
+      ctx.closePath();
+      ctx.fill();
+
+      // Blade highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.beginPath();
+      ctx.moveTo(2, -2);
+      ctx.lineTo(this.radius * 0.65, -7);
+      ctx.lineTo(this.radius * 0.65, -2);
+      ctx.lineTo(2, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // Center hub
+    ctx.fillStyle = '#0d0d22';
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = this.glowColor;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.24, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.10, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // Name tag
+    ctx.fillStyle   = 'rgba(200,200,255,0.72)';
+    ctx.font        = 'bold 10px system-ui';
+    ctx.textAlign   = 'center';
+    ctx.fillText(this.name, this.pos.x, this.pos.y - this.radius - 15);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   GAME  — main loop & logic
+═══════════════════════════════════════════════════ */
+
+class Game {
+  constructor(canvas) {
+    this.canvas      = canvas;
+    this.ctx         = canvas.getContext('2d');
+    this.W           = canvas.width;
+    this.H           = canvas.height;
+    this.arena       = new Arena(this.W / 2, this.H / 2, Math.min(this.W, this.H) / 2 - 28);
+    this.bayblades   = [];
+    this.projectiles = [];
+    this.ps          = new ParticleSystem();
+    this.state       = 'idle';   // 'idle' | 'running' | 'ended'
+    this.winner      = null;
+    this._lastTs     = null;
+
+    // Start render loop immediately (shows arena even before battle)
+    const loop = (ts) => {
+      requestAnimationFrame(loop);
+      const dt = Math.min(((ts - (this._lastTs ?? ts)) / 1000), 0.05);
+      this._lastTs = ts;
+      if (this.state === 'running') this._update(dt);
+      this._render();
+    };
+    requestAnimationFrame(loop);
+  }
+
+  start(configs) {
+    this.winner      = null;
+    this.projectiles = [];
+    this.ps          = new ParticleSystem();
+    this.bayblades   = configs.map(c => new Bayblade(c));
+    this.state       = 'running';
+  }
+
+  reset() {
+    this.state       = 'idle';
+    this.winner      = null;
+    this.bayblades   = [];
+    this.projectiles = [];
+    this.ps          = new ParticleSystem();
+  }
+
+  _update(dt) {
+    this.arena.update(dt);
+    this.ps.update(dt);
+
+    // Update & cull projectiles
+    this.projectiles = this.projectiles.filter(p => {
+      p.update(dt, this.arena, this.bayblades, this.ps);
+      if (!p.active) {
+        // Notify ability that live harpoon is gone
+        if (p._abilityRef) p._abilityRef.hasLive = false;
+        p.onDeactivate();
+      }
+      return p.active;
+    });
+
+    // Update bayblades
+    this.bayblades.forEach(b =>
+      b.update(dt, this.arena, this.bayblades, this.projectiles, this.ps));
+
+    // Bayblade–Bayblade collisions
+    for (let i = 0; i < this.bayblades.length; i++) {
+      for (let j = i + 1; j < this.bayblades.length; j++) {
+        const a = this.bayblades[i];
+        const b = this.bayblades[j];
+        if (!a.alive || !b.alive) continue;
+        if (a.caughtBy || b.caughtBy) continue;
+
+        const d   = a.pos.distTo(b.pos);
+        const min = a.radius + b.radius;
+        if (d >= min) continue;
+
+        const n   = b.pos.sub(a.pos).normalize();
+        const ov  = min - d;
+        a.pos = a.pos.sub(n.scale(ov * 0.5));
+        b.pos = b.pos.add(n.scale(ov * 0.5));
+
+        const rv = a.vel.sub(b.vel).dot(n);
+        if (rv > 0) {
+          const imp = rv * 0.82;
+          a.vel = a.vel.sub(n.scale(imp));
+          b.vel = b.vel.add(n.scale(imp));
+        }
+
+        const spd = Math.abs(a.vel.sub(b.vel).dot(n));
+        if (spd > 25) {
+          a.takeDamage(spd * 0.07, 'collision', b);
+          b.takeDamage(spd * 0.07, 'collision', a);
+        }
+
+        a.onCollisionWith(b, this.ps);
+        b.onCollisionWith(a, this.ps);
+
+        this.ps.emit(10, {
+          pos: a.pos.add(b.pos).scale(0.5),
+          color: ['#ffffff', a.glowColor, b.glowColor],
+          speed: 140, minSize: 2, maxSize: 5, minLife: 0.18, maxLife: 0.45,
+        });
+      }
+    }
+
+    // Win check
+    const alive = this.bayblades.filter(b => b.alive);
+    if (alive.length < this.bayblades.length && this.bayblades.length > 0) {
+      if (alive.length <= 1) {
+        this.winner = alive[0] ?? null;
+        this.state  = 'ended';
+      }
+    }
+  }
+
+  _render() {
+    const { ctx, W, H } = this;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#07071a';
+    ctx.fillRect(0, 0, W, H);
+
+    this.arena.render(ctx);
+    this.ps.render(ctx);
+    this.projectiles.forEach(p => p.render(ctx));
+    this.bayblades.forEach(b => b.render(ctx));
+
+    // Winner pulse
+    if (this.state === 'ended' && this.winner) {
+      const t  = ((Date.now() % 600) / 600);
+      const r  = 60 + t * 22;
+      const pg = ctx.createRadialGradient(
+        this.winner.pos.x, this.winner.pos.y, 0,
+        this.winner.pos.x, this.winner.pos.y, r,
+      );
+      pg.addColorStop(0, this.winner.glowColor + '55');
+      pg.addColorStop(1, 'transparent');
+      ctx.fillStyle = pg;
+      ctx.beginPath();
+      ctx.arc(this.winner.pos.x, this.winner.pos.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // In-canvas cooldown bars
+    this.bayblades.forEach(b => {
+      if (!b.alive) return;
+      const cd = b.ability.cdFraction;
+      if (cd <= 0) return;
+      const bw = 42, bh = 4;
+      const bx = b.pos.x - bw / 2;
+      const by = b.pos.y + b.radius + 7;
+      ctx.fillStyle = '#1a1a36';
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.fillStyle = b.ability.color;
+      ctx.fillRect(bx, by, bw * (1 - cd), bh);
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   UI MANAGER
+═══════════════════════════════════════════════════ */
+
+class UI {
+  constructor(game) {
+    this.game = game;
+
+    // Default fighter configs (not instanced yet — ability is a key string)
+    this.fighters = [
+      {
+        name: 'Vortex',  color: '#4488ff', glowColor: '#88bbff',
+        abilityKey: 'harpoon',   maxHealth: 100, blades: 3,
+        offsetX: -105,
+      },
+      {
+        name: 'Plague',  color: '#ff4466', glowColor: '#ff88aa',
+        abilityKey: 'parasite',  maxHealth: 100, blades: 3,
+        offsetX:  105,
+      },
+    ];
+
+    this._buildCards();
+    this._buildLegend();
+    this._bindButtons();
+    this._uiLoop();
+  }
+
+  _buildCards() {
+    const container = document.getElementById('bay-cards');
+    container.innerHTML = '';
+    this.fighters.forEach((f, i) => {
+      const dot = `<div class="bay-dot" style="background:${f.color};box-shadow:0 0 7px ${f.color};"></div>`;
+      const card = document.createElement('div');
+      card.className = 'bay-card';
+      card.id = `bay-card-${i}`;
+      card.style.background   = `${f.color}0d`;
+      card.style.borderColor  = `${f.color}28`;
+      card.innerHTML = `
+        <div class="bay-header">
+          ${dot}
+          <div class="bay-name">${f.name}</div>
+          <div class="bay-ability-icon" id="bay-icon-${i}">${AbilityRegistry.getAll().find(a => a.key === f.abilityKey)?.icon ?? '?'}</div>
+        </div>
+        <div class="hp-track">
+          <div class="hp-fill" id="hp-fill-${i}" style="width:100%;background:linear-gradient(90deg,${f.color},${f.glowColor});"></div>
+        </div>
+        <div class="hp-text" id="hp-text-${i}">100 / 100</div>
+        <div class="cd-row">
+          <div class="cd-label">Cooldown</div>
+          <div class="cd-track">
+            <div class="cd-fill" id="cd-fill-${i}" style="width:0%;background:${f.color};"></div>
+          </div>
+        </div>
+        <select class="ability-select" id="ability-sel-${i}"></select>
+        <div class="status-row" id="status-row-${i}"></div>
+      `;
+      container.appendChild(card);
+
+      // Populate ability select
+      const sel = document.getElementById(`ability-sel-${i}`);
+      AbilityRegistry.getAll().forEach(a => {
+        const opt   = document.createElement('option');
+        opt.value   = a.key;
+        opt.textContent = `${a.icon} ${a.name}`;
+        sel.appendChild(opt);
+      });
+      sel.value = f.abilityKey;
+      sel.addEventListener('change', () => {
+        f.abilityKey = sel.value;
+        const icon = AbilityRegistry.getAll().find(a => a.key === sel.value)?.icon ?? '?';
+        document.getElementById(`bay-icon-${i}`).textContent = icon;
+      });
+    });
+  }
+
+  _buildLegend() {
+    const leg = document.getElementById('ability-legend');
+    leg.innerHTML = '';
+    AbilityRegistry.getAll().forEach(a => {
+      const el = document.createElement('div');
+      el.className = 'legend-entry';
+      el.innerHTML = `
+        <div class="legend-icon-box" style="background:${a.color}1a;border:1px solid ${a.color}44;">${a.icon}</div>
+        <div>
+          <div class="legend-entry-name" style="color:${a.color};">${a.name}</div>
+          <div class="legend-entry-desc">${a.description}</div>
+        </div>
+      `;
+      leg.appendChild(el);
+    });
+  }
+
+  _bindButtons() {
+    document.getElementById('btn-start').addEventListener('click', () => {
+      if (this.game.state === 'running') return;
+      const { arena } = this.game;
+
+      const configs = this.fighters.map((f, _i) => ({
+        name:      f.name,
+        color:     f.color,
+        glowColor: f.glowColor,
+        ability:   AbilityRegistry.create(f.abilityKey),
+        maxHealth: f.maxHealth,
+        blades:    f.blades,
+        pos:       arena.center.add(new Vec2(f.offsetX, 0)),
+      }));
+
+      this.game.start(configs);
+      this._setSelectsDisabled(true);
+      document.getElementById('winner-overlay').classList.remove('visible');
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('game-state-label').textContent = 'Battle!';
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      this.game.reset();
+      this._setSelectsDisabled(false);
+      document.getElementById('btn-start').disabled = false;
+      document.getElementById('btn-start').textContent = '▶ Start Battle';
+      document.getElementById('winner-overlay').classList.remove('visible');
+      document.getElementById('game-state-label').textContent = 'Ready';
+      this.fighters.forEach((_f, i) => {
+        document.getElementById(`hp-fill-${i}`).style.width = '100%';
+        document.getElementById(`hp-text-${i}`).textContent = '100 / 100';
+        document.getElementById(`cd-fill-${i}`).style.width = '0%';
+        document.getElementById(`status-row-${i}`).innerHTML = '';
+      });
+    });
+
+    document.getElementById('add-bay-btn').addEventListener('click', () => {
+      // Placeholder — shows the extensibility hook
+      alert('Add Bayblade: framework ready!\nExtend fighters[] in UI and register new abilities in AbilityRegistry.');
+    });
+  }
+
+  _setSelectsDisabled(disabled) {
+    this.fighters.forEach((_f, i) => {
+      document.getElementById(`ability-sel-${i}`).disabled = disabled;
+    });
+  }
+
+  _uiLoop() {
+    const tick = () => {
+      requestAnimationFrame(tick);
+      this._syncUI();
+    };
+    requestAnimationFrame(tick);
+  }
+
+  _syncUI() {
+    const { game } = this;
+
+    game.bayblades.forEach((b, i) => {
+      const fillEl   = document.getElementById(`hp-fill-${i}`);
+      const textEl   = document.getElementById(`hp-text-${i}`);
+      const cdEl     = document.getElementById(`cd-fill-${i}`);
+      const statusEl = document.getElementById(`status-row-${i}`);
+      if (!fillEl) return;
+
+      const pct = Math.max(0, b.health / b.maxHealth);
+      fillEl.style.width   = (pct * 100).toFixed(1) + '%';
+      textEl.textContent   = `${Math.ceil(Math.max(0, b.health))} / ${b.maxHealth}`;
+      cdEl.style.width     = ((1 - b.ability.cdFraction) * 100).toFixed(1) + '%';
+
+      // Status chips
+      statusEl.innerHTML = '';
+      const chip = (text, bg, fg, border) => {
+        const s = document.createElement('span');
+        s.className = 'chip';
+        s.style.cssText = `background:${bg};color:${fg};border:1px solid ${border};`;
+        s.textContent   = text;
+        return s;
+      };
+
+      if (b.parasites.length > 0) {
+        statusEl.appendChild(chip(`🦠 ×${b.parasites.length}`, '#33ff8820', '#33ff88', '#33ff8840'));
+        statusEl.appendChild(chip(`☠ ${b.poisonDPS.toFixed(1)}/s`, '#22aa5520', '#66ffaa', '#22aa5540'));
+      }
+      if (b.caughtBy) {
+        statusEl.appendChild(chip('⚓ Hooked!', '#4488ff20', '#88bbff', '#4488ff40'));
+      }
+      if (!b.alive) {
+        statusEl.appendChild(chip('💀 KO', '#ff224420', '#ff6688', '#ff224440'));
+      }
+      if (b.ability.name === 'Blade Storm' && !b.ability.canActivate()) {
+        statusEl.appendChild(chip('🌀 Charging', '#ffaa0020', '#ffdd44', '#ffaa0040'));
+      }
+    });
+
+    // Winner overlay
+    if (game.state === 'ended') {
+      const overlay = document.getElementById('winner-overlay');
+      if (!overlay.classList.contains('visible')) {
+        overlay.classList.add('visible');
+        const textEl = document.getElementById('winner-text');
+        if (game.winner) {
+          textEl.textContent = `${game.winner.name} Wins!`;
+          textEl.style.color = game.winner.glowColor;
+        } else {
+          textEl.textContent = 'Draw!';
+          textEl.style.color = '#ffffff';
+        }
+        document.getElementById('game-state-label').textContent = 'Ended';
+        this._setSelectsDisabled(false);
+        const btn = document.getElementById('btn-start');
+        btn.disabled    = false;
+        btn.textContent = '▶ Play Again';
+      }
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   BOOTSTRAP
+═══════════════════════════════════════════════════ */
+
+window.addEventListener('load', () => {
+  const canvas = document.getElementById('arena');
+  const game   = new Game(canvas);
+  new UI(game);
+});
+</script>
+</body>
+</html>
