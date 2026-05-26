@@ -315,6 +315,8 @@ const GameConfig = {
   mineCooldown:     2.2,
   mineArmDelay:     0.8,
   mineTriggerR:     34,
+  // Audio
+  volume:           0.65,
 };
 
 /* ═══════════════════════════════════════════════════
@@ -403,6 +405,233 @@ class ParticleSystem {
 }
 
 /* ═══════════════════════════════════════════════════
+   AUDIO ENGINE  (Web Audio API — zero external files)
+   All sounds are synthesized procedurally.
+═══════════════════════════════════════════════════ */
+
+class AudioEngine {
+  constructor() {
+    this._ctx    = null;
+    this._master = null;
+    this._nbuf   = null;   // reusable white-noise buffer
+    this._last   = {};     // throttle timestamps
+    this._tryInit();
+  }
+
+  _tryInit() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this._ctx    = new AC();
+      this._master = this._ctx.createGain();
+      this._master.gain.value = GameConfig.volume;
+      this._master.connect(this._ctx.destination);
+    } catch (_) { this._ctx = null; }
+  }
+
+  resume()      { if (this._ctx?.state === 'suspended') this._ctx.resume(); }
+  setVolume(v)  { if (this._master) this._master.gain.value = v; }
+  get enabled() { return !!this._ctx; }
+
+  // Rate-gate: returns false if called again within minGap ms
+  _gate(key, minGap = 60) {
+    const now = Date.now();
+    if (now - (this._last[key] ?? 0) < minGap) return false;
+    this._last[key] = now;
+    return true;
+  }
+
+  // Build an ADSR gain node and connect it to dest (default: master)
+  _env(peak, atk, sus, rel, dest) {
+    const g = this._ctx.createGain();
+    const t = this._ctx.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + atk);
+    if (sus > 0) g.gain.setValueAtTime(peak, t + atk + sus);
+    g.gain.exponentialRampToValueAtTime(1e-4, t + atk + sus + rel);
+    g.connect(dest ?? this._master);
+    return [g, t];
+  }
+
+  // Oscillator with optional frequency sweep
+  _osc(type, freq0, freq1, peak, atk, sus, rel, dest) {
+    if (!this._ctx) return;
+    const [g, t] = this._env(peak, atk, sus, rel, dest);
+    const o = this._ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq0, t);
+    if (freq1 != null)
+      o.frequency.exponentialRampToValueAtTime(freq1, t + atk + sus + rel);
+    o.connect(g);
+    o.start(t);
+    o.stop(t + atk + sus + rel + 0.06);
+  }
+
+  // Cached 1-second white-noise buffer
+  _noiseBuffer() {
+    if (!this._nbuf || this._nbuf.sampleRate !== this._ctx.sampleRate) {
+      const sr  = this._ctx.sampleRate;
+      const buf = this._ctx.createBuffer(1, sr, sr);
+      const d   = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      this._nbuf = buf;
+    }
+    return this._nbuf;
+  }
+
+  // Noise burst with optional band-pass
+  _noise(peak, atk, sus, rel, bpFreq, bpQ = 3, dest) {
+    if (!this._ctx) return;
+    const [g, t] = this._env(peak, atk, sus, rel, dest);
+    const src = this._ctx.createBufferSource();
+    src.buffer = this._noiseBuffer();
+    src.loop   = true;
+    let node   = src;
+    if (bpFreq) {
+      const f = this._ctx.createBiquadFilter();
+      f.type  = 'bandpass';
+      f.frequency.value = bpFreq;
+      f.Q.value         = bpQ;
+      src.connect(f);
+      node = f;
+    }
+    node.connect(g);
+    src.start(t);
+    src.stop(t + atk + sus + rel + 0.12);
+  }
+
+  // ── Sound library ──────────────────────────────────────────────
+
+  harpoonFire() {
+    if (!this._ctx || !this._gate('hFire', 200)) return;
+    // Metallic clank + downward whoosh
+    this._noise(0.3,  0.003, 0.01, 0.07, 3200, 9);
+    this._osc('sawtooth', 920, 180, 0.18, 0.004, 0, 0.22, null);
+  }
+
+  harpoonBounce() {
+    if (!this._ctx || !this._gate('hBounce', 45)) return;
+    const freq = 520 + Math.random() * 880;
+    this._osc('triangle', freq, freq * 0.45, 0.16, 0.002, 0, 0.11, null);
+    this._noise(0.07, 0.001, 0, 0.045, freq * 0.6, 6);
+  }
+
+  harpoonHit() {
+    if (!this._ctx) return;
+    // Electric zap descending + noise thud
+    this._osc('square', 1400, 100, 0.24, 0.003, 0, 0.19, null);
+    this._noise(0.35, 0.003, 0.02, 0.14, 155, 2);
+  }
+
+  harpoonRetract() {
+    if (!this._ctx) return;
+    // Rising mechanical whirr (chain reeling in)
+    this._osc('sawtooth', 160, 460, 0.09, 0.02, 0.55, 0.2, null);
+    this._noise(0.05, 0.01, 0.45, 0.18, 380, 4);
+  }
+
+  harpoonSlam() {
+    if (!this._ctx) return;
+    // Sub-bass thump + full noise crash + high crack
+    this._osc('sine',     140,  22, 0.6,  0.003, 0, 0.55, null);
+    this._noise(0.6,  0.004, 0.08, 0.38, null);
+    this._noise(0.28, 0.002, 0,    0.11, 3600,   6);
+  }
+
+  parasiteInfect() {
+    if (!this._ctx || !this._gate('pInfect', 100)) return;
+    // Organic buzzy blop with LFO wobble
+    const t   = this._ctx.currentTime;
+    const osc = this._ctx.createOscillator();
+    osc.type  = 'square';
+    osc.frequency.setValueAtTime(72, t);
+    const lfo = this._ctx.createOscillator();
+    lfo.frequency.value = 30;
+    const lg  = this._ctx.createGain();
+    lg.gain.value = 48;
+    lfo.connect(lg);
+    lg.connect(osc.frequency);
+    const [g] = this._env(0.18, 0.008, 0, 0.28, null);
+    osc.connect(g);
+    osc.start(t); osc.stop(t + 0.36);
+    lfo.start(t); lfo.stop(t + 0.36);
+    this._osc('sine', 330, 175, 0.09, 0.005, 0, 0.18, null);
+  }
+
+  poisonTick() {
+    if (!this._ctx || !this._gate('pTick', 220)) return;
+    this._noise(0.04, 0.003, 0.01, 0.08, 950, 11);
+    this._osc('sine', 460, 290, 0.03, 0.003, 0, 0.1, null);
+  }
+
+  bladeStorm() {
+    if (!this._ctx) return;
+    // Dual-oscillator expanding ring whoosh
+    this._osc('sawtooth', 270, 820, 0.22, 0.02, 0.1, 0.38, null);
+    this._osc('sawtooth', 135, 410, 0.12, 0.02, 0.1, 0.38, null);
+    this._noise(0.18, 0.01, 0.15, 0.28, 580, 3);
+  }
+
+  mineLay() {
+    if (!this._ctx || !this._gate('mLay', 160)) return;
+    this._noise(0.11, 0.002, 0, 0.04, 2400, 13);          // mechanical click
+    this._osc('sine', 1100, 880, 0.09, 0.004, 0.05, 0.13, null); // deployment beep
+  }
+
+  mineArmed() {
+    if (!this._ctx || !this._gate('mArmed', 180)) return;
+    this._osc('sine', 900, 1120, 0.07, 0.003, 0.02, 0.09, null);
+  }
+
+  mineExplode() {
+    if (!this._ctx) return;
+    // Sub-bass kick + full noise explosion + distant rumble + high crack
+    this._osc('sine',  92,  18, 0.68, 0.003, 0,    0.68, null);
+    this._noise(0.78,  0.004, 0.14, 0.58, null);
+    this._noise(0.38,  0.002, 0,    0.14, 2900, 5);
+    this._noise(0.22,  0.01,  0.42, 0.52, 95,   1);
+  }
+
+  collision(intensity = 50) {
+    if (!this._ctx || !this._gate('col', 75)) return;
+    const peak = Math.min(0.3, 0.06 + intensity * 0.0008);
+    const freq = 680 + Math.random() * 520;
+    this._noise(peak,      0.002, 0, 0.07, freq, 7);
+    this._osc('triangle', 210 + Math.random() * 190, 75, peak * 0.55, 0.002, 0, 0.08, null);
+  }
+
+  baybladeKO() {
+    if (!this._ctx) return;
+    // Spinning-down whine + crash
+    this._osc('sawtooth', 720, 32, 0.32, 0.005, 0,    1.25, null);
+    this._noise(0.52,  0.004, 0.28, 0.62, null);
+    this._noise(0.26,  0.002, 0,    0.13, 3100, 5);
+  }
+
+  battleStart() {
+    if (!this._ctx) return;
+    this._osc('sawtooth', 85, 660, 0.34, 0.04, 0, 0.42, null);
+    setTimeout(() => {
+      if (!this._ctx) return;
+      this._noise(0.42, 0.003, 0.07, 0.28, null);
+      this._osc('sine', 230, 105, 0.32, 0.003, 0.14, 0.32, null);
+    }, 370);
+  }
+
+  winnerFanfare() {
+    if (!this._ctx) return;
+    [330, 415, 523, 659].forEach((freq, i) => {
+      setTimeout(() => {
+        this._osc('sine',     freq,     null, 0.22, 0.01, 0.12, 0.22, null);
+        this._osc('triangle', freq * 2, null, 0.10, 0.01, 0.06, 0.16, null);
+      }, i * 135);
+    });
+  }
+}
+
+const SFX = new AudioEngine();
+
+/* ═══════════════════════════════════════════════════
    PROJECTILE BASE
 ═══════════════════════════════════════════════════ */
 
@@ -444,8 +673,9 @@ class HarpoonProjectile extends Projectile {
     // Retraction state
     this.attached     = null;   // Bayblade being dragged
     this.retracting   = false;
-    this.retractIdx   = 0;      // current "from" index (counts down to 0 = SLAM)
-    this.retractPos   = null;   // current world position of dragged target
+    this.retractIdx       = 0;    // current "from" index (counts down to 0 = SLAM)
+    this.retractPos       = null; // current world position of dragged target
+    this._retractSounded  = false;
   }
 
   update(dt, arena, targets, ps) {
@@ -475,6 +705,7 @@ class HarpoonProjectile extends Projectile {
       this.pos   = arena.center.add(n.scale(arena.radius - 6));
       this.path.push(this.pos.clone()); // record waypoint
       this.bounces++;
+      SFX.harpoonBounce();
       ps.emit(7, {
         pos: this.pos, color: ['#88aaff', '#ccddff', '#ffffff'],
         speed: 75, minSize: 1, maxSize: 3, minLife: 0.15, maxLife: 0.4,
@@ -487,6 +718,7 @@ class HarpoonProjectile extends Projectile {
       if (t === this.owner || !t.alive || t.caughtBy) continue;
       if (this.pos.distTo(t.pos) < t.radius + 8) {
         t.takeDamage(this.hitDamage, 'harpoon', this.owner);
+        SFX.harpoonHit();
         this.attached   = t;
         this.retracting = true;
         t.caughtBy      = this;
@@ -510,8 +742,15 @@ class HarpoonProjectile extends Projectile {
       return;
     }
 
+    // Play reeling sound once when retraction begins
+    if (!this._retractSounded) {
+      SFX.harpoonRetract();
+      this._retractSounded = true;
+    }
+
     if (this.retractIdx <= 0) {
       // Arrived at owner — SLAM!
+      SFX.harpoonSlam();
       this.attached.takeDamage(this.slamDamage, 'slam', this.owner);
       this.attached.vel      = this.retractPos.sub(this.owner.pos).normalize().scale(-200);
       this.attached.caughtBy = null;
@@ -634,7 +873,10 @@ class Mine extends Projectile {
     this.age   += dt;
     this.phase += dt * 4;
     if (this.age > this.maxAge) { this.active = false; return; }
-    if (!this.armed && this.age >= this.armDelay) this.armed = true;
+    if (!this.armed && this.age >= this.armDelay) {
+      this.armed = true;
+      SFX.mineArmed();
+    }
     if (!this.armed) return;
 
     for (const t of targets) {
@@ -647,6 +889,7 @@ class Mine extends Projectile {
   }
 
   _explode(targets, ps) {
+    SFX.mineExplode();
     for (const t of targets) {
       if (t === this.owner || !t.alive) continue;
       const d      = this.pos.distTo(t.pos);
@@ -879,6 +1122,7 @@ class HarpoonAbility extends Ability {
     if (!targets.some(t => t !== this.owner && t.alive)) return;
 
     // Fire in a RANDOM direction — will bounce until it hits
+    SFX.harpoonFire();
     const dir = Vec2.fromAngle(Math.random() * Math.PI * 2);
     const p   = new HarpoonProjectile(
       this.owner.pos.clone(),
@@ -917,6 +1161,7 @@ class ParasiteAbility extends Ability {
     other.parasites.push(new Parasite(other, other.parasites.length));
     other.poisonDPS = other.parasites.length * this.dpsPerParasite;
     this.cdTimer    = this.cooldown;
+    SFX.parasiteInfect();
     ps?.emit(10, {
       pos: other.pos, color: ['#33ff88', '#88ffbb'],
       speed: 110, minSize: 2, maxSize: 4, minLife: 0.25, maxLife: 0.55,
@@ -947,6 +1192,7 @@ class BladeStormAbility extends Ability {
     if (!close.length) return;
     projectiles.push(new StormRing(this.owner.pos.clone(), this.owner, this._cfg));
     this.cdTimer = this.cooldown;
+    SFX.bladeStorm();
     ps?.emit(18, {
       pos: this.owner.pos, color: ['#ffaa00', '#ff8800', '#ffee44'],
       speed: 60, minSize: 2, maxSize: 5, minLife: 0.18, maxLife: 0.45,
@@ -985,6 +1231,7 @@ class MineAbility extends Ability {
     projectiles.push(mine);
     this._activeMineCount++;
     this.cdTimer = this.cooldown;
+    SFX.mineLay();
   }
 }
 
@@ -1171,6 +1418,7 @@ class Bayblade {
     if (this.poisonDPS > 0) {
       this.takeDamage(this.poisonDPS * dt, 'poison', null);
       if (rng.chance(dt * Math.min(this.parasites.length, 5) * 2)) {
+        SFX.poisonTick();
         ps.emit(1, {
           pos: this.pos, color: '#33ff88',
           speed: 35, minSize: 1, maxSize: 2.5, minLife: 0.4, maxLife: 1.0, alpha: 0.55,
@@ -1190,6 +1438,7 @@ class Bayblade {
 
     if (this.health <= 0 && this.alive) {
       this.alive = false;
+      SFX.baybladeKO();
       ps.emit(60, {
         pos: this.pos,
         color: [this.color, this.glowColor, '#ffffff', '#ffaa44'],
@@ -1472,6 +1721,8 @@ class Game {
     this.ps          = new ParticleSystem();
     this.bayblades   = configs.map(c => new Bayblade(c));
     this.state       = 'running';
+    SFX.resume();
+    SFX.battleStart();
   }
 
   reset() {
@@ -1527,6 +1778,7 @@ class Game {
         if (spd > 25) {
           a.takeDamage(spd * 0.05, 'collision', b);
           b.takeDamage(spd * 0.05, 'collision', a);
+          SFX.collision(spd);
         }
 
         a.onCollisionWith(b, this.ps);
@@ -1545,6 +1797,7 @@ class Game {
     if (alive.length < this.bayblades.length && this.bayblades.length > 0 && alive.length <= 1) {
       this.winner = alive[0] ?? null;
       this.state  = 'ended';
+      SFX.winnerFanfare();
     }
   }
 
@@ -1621,6 +1874,7 @@ class UI {
     const defs = [
       // General
       { section: 'General' },
+      { key: 'volume',          label: 'Volume',        min:0,   max:1,    step:0.05, suffix:'' },
       { key: 'health',          label: 'Health',        min:80,  max:500,  step:20,  suffix:'' },
       { key: 'speedMult',       label: 'Speed',         min:0.5, max:2.5,  step:0.1, suffix:'×' },
       // Harpoon
@@ -1653,7 +1907,7 @@ class UI {
             min="${d.min}" max="${d.max}" step="${d.step}"
             value="${GameConfig[d.key]}"
             data-cfg="${d.key}" data-suffix="${d.suffix}">
-          <span class="cfg-val" id="cfgv-${d.key}">${GameConfig[d.key]}${d.suffix}</span>
+          <span class="cfg-val" id="cfgv-${d.key}">${d.key === 'volume' ? Math.round(GameConfig[d.key] * 100) + '%' : GameConfig[d.key] + d.suffix}</span>
         </div>`;
     });
     body.innerHTML = html;
@@ -1665,7 +1919,8 @@ class UI {
       input.addEventListener('input', () => {
         const v = parseFloat(input.value);
         GameConfig[key] = v;
-        valEl.textContent = v + suffix;
+        if (key === 'volume') SFX.setVolume(v);
+        valEl.textContent = key === 'volume' ? Math.round(v * 100) + '%' : v + suffix;
       });
     });
 
