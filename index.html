@@ -903,7 +903,7 @@ class ParasiteAbility extends Ability {
       name: 'Parasite', icon: '🦠', color: '#33ff88',
       description: 'Each collision infects the opponent with a new parasite that deals permanent stacking poison damage.',
       cooldown: cfg.cooldown ?? 0.7,
-      behaviorType: 'aggressive',
+      behaviorType: 'tactical',
       ...cfg,
     });
     this.dpsPerParasite = cfg.dpsPerParasite ?? 3;
@@ -1234,7 +1234,75 @@ class Bayblade {
       }
     }
 
-    if (bt === 'aggressive') {
+    if (bt === 'tactical') {
+      // ── Phase 1: Dodge incoming harpoons ──────────────────────────
+      // Scan flying (non-retracting) harpoons owned by enemies.
+      const flyingHarpoons = projectiles.filter(p =>
+        p instanceof HarpoonProjectile && p.active && !p.retracting &&
+        p.owner !== this);
+
+      let dodging  = false;
+      let dodgeVel = new Vec2();
+
+      for (const h of flyingHarpoons) {
+        const toMe = this.pos.sub(h.pos);
+        const dist = toMe.len();
+        if (dist > 260) continue;
+
+        // Is it heading toward us? (dot product with unit vector to us)
+        const hDir       = h.vel.normalize();
+        const approaching = hDir.dot(toMe.normalize());
+        if (approaching < 0.1) continue; // not aimed at us
+
+        // Pick the perpendicular direction that moves further from harpoon's
+        // line of travel (away from the projection of toMe onto harpoon axis).
+        const awayFromPath = toMe.sub(hDir.scale(toMe.dot(hDir)));
+        const perp         = hDir.perp();
+        const dodgeDir     = perp.dot(awayFromPath) >= 0 ? perp : perp.scale(-1);
+        dodgeVel = dodgeVel.add(dodgeDir.scale(240 * S));
+        dodging  = true;
+      }
+
+      if (dodging) {
+        // Prioritise dodge over everything else
+        this.vel = Vec2.lerp(this.vel,
+          dodgeVel.normalize().scale(240 * S), dt * 7);
+        return;
+      }
+
+      // ── Phase 2: Attack only during enemy harpoon cooldown ────────
+      // "Safe window" = no harpoon is currently flying AND the enemy
+      // that owns a HarpoonAbility cannot fire yet (cdTimer > 0).
+      const harpoonEnemies = enemies.filter(e =>
+        typeof e.ability.hasLive === 'boolean');
+      const anyLive   = harpoonEnemies.some(e => e.ability.hasLive);
+      const safeWindow = harpoonEnemies.length === 0 ||
+        (!anyLive && harpoonEnemies.every(e => e.ability.cdTimer > 0.5));
+
+      if (safeWindow) {
+        // Harpoon is cooling down — charge in
+        const toward = nearest.pos.sub(this.pos).normalize().scale(200 * S);
+        this.vel = Vec2.lerp(this.vel, toward, dt * 4.0);
+      } else {
+        // Harpoon ready or in flight — orbit at safe range, waiting
+        const toNear = nearest.pos.sub(this.pos);
+        const dist   = toNear.len();
+        const safeR  = 180;
+        if (dist < safeR) {
+          // Too close, back off
+          const away = toNear.normalize().scale(-160 * S);
+          this.vel = Vec2.lerp(this.vel, away.add(repulsion), dt * 3.5);
+        } else {
+          // Orbit at safe distance
+          const perp = toNear.perp().normalize().scale(138 * S);
+          const toC  = arena.center.sub(this.pos);
+          const pull = toC.len() > arena.radius * 0.58
+            ? toC.normalize().scale(100 * S) : new Vec2();
+          this.vel = Vec2.lerp(this.vel, perp.add(pull), dt * 2.5);
+        }
+      }
+
+    } else if (bt === 'aggressive') {
       const toward = nearest.pos.sub(this.pos).normalize().scale(185 * S);
       this.vel = Vec2.lerp(this.vel, toward, dt * 3.2);
 
