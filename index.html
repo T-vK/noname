@@ -511,11 +511,64 @@ class AudioEngine {
     }
     node.connect(g); src.start(t); src.stop(t + atk + sus + rel + 0.12);
   }
-  harpoonFire()    { if (!this._ctx || !this._gate('hFire',200)) return; this._noise(0.3,0.003,0.01,0.07,3200,9); this._osc('sawtooth',920,180,0.18,0.004,0,0.22,null); }
-  harpoonBounce()  { if (!this._ctx || !this._gate('hBounce',45)) return; const f=520+Math.random()*880; this._osc('triangle',f,f*0.45,0.16,0.002,0,0.11,null); this._noise(0.07,0.001,0,0.045,f*0.6,6); }
-  harpoonHit()     { if (!this._ctx) return; this._osc('square',1400,100,0.24,0.003,0,0.19,null); this._noise(0.35,0.003,0.02,0.14,155,2); }
-  harpoonRetract() { if (!this._ctx) return; this._osc('sawtooth',160,460,0.09,0.02,0.55,0.2,null); this._noise(0.05,0.01,0.45,0.18,380,4); }
-  harpoonSlam()    { if (!this._ctx) return; this._osc('sine',140,22,0.6,0.003,0,0.55,null); this._noise(0.6,0.004,0.08,0.38,null); this._noise(0.28,0.002,0,0.11,3600,6); }
+  // ── Fire / travel ──────────────────────────────────────────────
+  harpoonFire() {
+    if (!this._ctx || !this._gate('hFire',200)) return;
+    // Clank + sharp downward whoosh
+    this._noise(0.28,0.002,0.008,0.06,3400,10);
+    this._osc('sawtooth',1100,160,0.2,0.003,0,0.24,null);
+  }
+
+  // Metallic multi-harmonic ricochet
+  harpoonBounce() {
+    if (!this._ctx || !this._gate('hBounce',40)) return;
+    const t=this._ctx.currentTime, base=480+Math.random()*720;
+    [1,1.52,2.18].forEach((m,i)=>{
+      const o=this._ctx.createOscillator(); o.type='triangle';
+      o.frequency.setValueAtTime(base*m,t);
+      o.frequency.exponentialRampToValueAtTime(base*m*0.38,t+0.13);
+      const g=this._ctx.createGain(); g.gain.setValueAtTime(0.15-i*0.04,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+      o.connect(g); g.connect(this._master); o.start(t); o.stop(t+0.2);
+    });
+    this._noise(0.09,0.001,0,0.05,3800,10);
+  }
+
+  // Zap + thud on hook landing
+  harpoonHit() {
+    if (!this._ctx) return;
+    this._osc('square',1500,95,0.26,0.002,0,0.18,null);
+    this._noise(0.38,0.002,0.015,0.13,140,1.8);
+  }
+
+  // Rising mechanical chain-reel whirr
+  harpoonRetract() {
+    if (!this._ctx) return;
+    this._osc('sawtooth',140,480,0.1,0.025,0.6,0.2,null);
+    this._noise(0.055,0.015,0.5,0.2,360,4);
+  }
+
+  // Heavy metallic slam: punch + ring + crack
+  harpoonSlam() {
+    if (!this._ctx) return;
+    const t=this._ctx.currentTime;
+    // Sub punch
+    const p=this._ctx.createOscillator(); p.type='sine';
+    p.frequency.setValueAtTime(220,t); p.frequency.exponentialRampToValueAtTime(38,t+0.22);
+    const pg=this._ctx.createGain(); pg.gain.setValueAtTime(0.75,t); pg.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+    p.connect(pg); pg.connect(this._master); p.start(t); p.stop(t+0.42);
+    // Metal ring decay
+    const r=this._ctx.createOscillator(); r.type='triangle';
+    r.frequency.setValueAtTime(880,t);
+    const rg=this._ctx.createGain(); rg.gain.setValueAtTime(0.14,t); rg.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+    r.connect(rg); rg.connect(this._master); r.start(t); r.stop(t+0.44);
+    // Mid thud noise
+    this._noise(0.48,0.002,0.018,0.22,260,1.6);
+    // High crack
+    this._noise(0.22,0.001,0,0.06,5200,7);
+  }
+
+  // ── Biological ─────────────────────────────────────────────────
   parasiteInfect() {
     if (!this._ctx || !this._gate('pInfect',100)) return;
     const t=this._ctx.currentTime, osc=this._ctx.createOscillator();
@@ -526,15 +579,131 @@ class AudioEngine {
     osc.start(t); osc.stop(t+0.36); lfo.start(t); lfo.stop(t+0.36);
     this._osc('sine',330,175,0.09,0.005,0,0.18,null);
   }
-  poisonTick()    { if (!this._ctx || !this._gate('pTick',220)) return; this._noise(0.04,0.003,0.01,0.08,950,11); this._osc('sine',460,290,0.03,0.003,0,0.1,null); }
-  bladeStorm()    { if (!this._ctx) return; this._osc('sawtooth',270,820,0.22,0.02,0.1,0.38,null); this._osc('sawtooth',135,410,0.12,0.02,0.1,0.38,null); this._noise(0.18,0.01,0.15,0.28,580,3); }
-  mineLay()       { if (!this._ctx || !this._gate('mLay',160)) return; this._noise(0.11,0.002,0,0.04,2400,13); this._osc('sine',1100,880,0.09,0.004,0.05,0.13,null); }
-  mineArmed()     { if (!this._ctx || !this._gate('mArmed',180)) return; this._osc('sine',900,1120,0.07,0.003,0.02,0.09,null); }
-  mineExplode()   { if (!this._ctx) return; this._osc('sine',92,18,0.68,0.003,0,0.68,null); this._noise(0.78,0.004,0.14,0.58,null); this._noise(0.38,0.002,0,0.14,2900,5); this._noise(0.22,0.01,0.42,0.52,95,1); }
-  collision(spd=50){ if (!this._ctx || !this._gate('col',75)) return; const p=Math.min(0.3,0.06+spd*0.0008),f=680+Math.random()*520; this._noise(p,0.002,0,0.07,f,7); this._osc('triangle',210+Math.random()*190,75,p*0.55,0.002,0,0.08,null); }
-  baybladeKO()    { if (!this._ctx) return; this._osc('sawtooth',720,32,0.32,0.005,0,1.25,null); this._noise(0.52,0.004,0.28,0.62,null); this._noise(0.26,0.002,0,0.13,3100,5); }
-  battleStart()   { if (!this._ctx) return; this._osc('sawtooth',85,660,0.34,0.04,0,0.42,null); setTimeout(()=>{ if(!this._ctx)return; this._noise(0.42,0.003,0.07,0.28,null); this._osc('sine',230,105,0.32,0.003,0.14,0.32,null); },370); }
-  winnerFanfare() { if (!this._ctx) return; [330,415,523,659].forEach((f,i)=>setTimeout(()=>{ this._osc('sine',f,null,0.22,0.01,0.12,0.22,null); this._osc('triangle',f*2,null,0.10,0.01,0.06,0.16,null); },i*135)); }
+  poisonTick() { if (!this._ctx || !this._gate('pTick',220)) return; this._noise(0.04,0.003,0.01,0.08,950,11); this._osc('sine',460,290,0.03,0.003,0,0.1,null); }
+
+  // ── Arena / environment ────────────────────────────────────────
+  // Blade hits the arena wall
+  bladeWallHit() {
+    if (!this._ctx || !this._gate('bladeWall',80)) return;
+    this._noise(0.13,0.001,0,0.09,1300,8);
+    this._osc('triangle',310,145,0.1,0.002,0,0.11,null);
+  }
+
+  // ── Blade Storm ────────────────────────────────────────────────
+  bladeStorm() {
+    if (!this._ctx) return;
+    this._osc('sawtooth',270,840,0.22,0.02,0.1,0.38,null);
+    this._osc('sawtooth',135,420,0.12,0.02,0.1,0.38,null);
+    this._noise(0.18,0.01,0.15,0.28,580,3);
+  }
+
+  // ── Mines ──────────────────────────────────────────────────────
+  mineLay()   { if (!this._ctx || !this._gate('mLay',160)) return; this._noise(0.11,0.002,0,0.04,2400,13); this._osc('sine',1100,880,0.09,0.004,0.05,0.13,null); }
+  mineArmed() { if (!this._ctx || !this._gate('mArmed',180)) return; this._osc('sine',900,1120,0.07,0.003,0.02,0.09,null); }
+  // Periodic ticking while armed
+  mineTick()  { if (!this._ctx || !this._gate('mineTick',290)) return; this._osc('sine',1380,1240,0.042,0.002,0.008,0.038,null); }
+
+  // Complete redesign: sharp punch → rumble → debris layers
+  mineExplode() {
+    if (!this._ctx) return;
+    const t=this._ctx.currentTime;
+    // 1. Transient punch: fast frequency drop (the "thwump")
+    const punch=this._ctx.createOscillator(); punch.type='sine';
+    punch.frequency.setValueAtTime(320,t); punch.frequency.exponentialRampToValueAtTime(28,t+0.19);
+    const pg=this._ctx.createGain(); pg.gain.setValueAtTime(0.0,t);
+    pg.gain.linearRampToValueAtTime(0.88,t+0.004); pg.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+    punch.connect(pg); pg.connect(this._master); punch.start(t); punch.stop(t+0.42);
+    // 2. Sub rumble tail
+    const sub=this._ctx.createOscillator(); sub.type='sine';
+    sub.frequency.setValueAtTime(58,t+0.04); sub.frequency.exponentialRampToValueAtTime(20,t+1.0);
+    const sg=this._ctx.createGain(); sg.gain.setValueAtTime(0,t);
+    sg.gain.linearRampToValueAtTime(0.55,t+0.06); sg.gain.exponentialRampToValueAtTime(0.001,t+1.1);
+    sub.connect(sg); sg.connect(this._master); sub.start(t); sub.stop(t+1.2);
+    // 3. Mid-range body noise (NOT bandpassed — use all freqs)
+    this._noise(0.52,0.002,0.04,0.38,null);
+    // 4. High debris crack (short, transient)
+    this._noise(0.38,0.001,0.004,0.065,5800,5);
+    // 5. Delayed room bounce simulation
+    setTimeout(()=>{ if(!this._ctx)return; this._noise(0.11,0.01,0.06,0.28,280,1.2); },95);
+  }
+
+  // ── Collisions ────────────────────────────────────────────────
+  // Blade-to-blade: thud body + metallic ring, intensity-scaled
+  collision(spd=50) {
+    if (!this._ctx || !this._gate('col',70)) return;
+    const t=this._ctx.currentTime, intens=Math.min(1,spd/180);
+    // Body thud
+    const o=this._ctx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(130+intens*70,t); o.frequency.exponentialRampToValueAtTime(42,t+0.1);
+    const g=this._ctx.createGain(); g.gain.setValueAtTime(0.32*intens+0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.14);
+    o.connect(g); g.connect(this._master); o.start(t); o.stop(t+0.17);
+    // Metal ring
+    const r=this._ctx.createOscillator(); r.type='triangle';
+    r.frequency.setValueAtTime(620+Math.random()*380,t);
+    const rg=this._ctx.createGain(); rg.gain.setValueAtTime(0.12*intens+0.04,t); rg.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    r.connect(rg); rg.connect(this._master); r.start(t); r.stop(t+0.25);
+    this._noise(0.14*intens+0.04,0.001,0,0.07,1600,5);
+  }
+
+  // ── Death / start / end ────────────────────────────────────────
+  baybladeKO() {
+    if (!this._ctx) return;
+    this._osc('sawtooth',720,32,0.32,0.005,0,1.25,null);
+    this._noise(0.52,0.004,0.28,0.62,null);
+    this._noise(0.26,0.002,0,0.13,3100,5);
+  }
+  battleStart() {
+    if (!this._ctx) return;
+    this._osc('sawtooth',85,660,0.34,0.04,0,0.42,null);
+    setTimeout(()=>{ if(!this._ctx)return; this._noise(0.42,0.003,0.07,0.28,null); this._osc('sine',230,105,0.32,0.003,0.14,0.32,null); },370);
+  }
+  winnerFanfare() {
+    if (!this._ctx) return;
+    [330,415,523,659].forEach((f,i)=>setTimeout(()=>{ this._osc('sine',f,null,0.22,0.01,0.12,0.22,null); this._osc('triangle',f*2,null,0.10,0.01,0.06,0.16,null); },i*135));
+  }
+
+  // ── Continuous loops (return handle with .stop()) ──────────────
+
+  // Per-blade spinning whirr — call once per blade, stop on death
+  createSpinLoop(spinRate) {
+    if (!this._ctx) return null;
+    try {
+      const baseFreq = 75 + spinRate * 9; // ~155-219 Hz
+      const osc = this._ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = baseFreq;
+      // Gentle tremolo for liveliness
+      const lfo=this._ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=9+Math.random()*5;
+      const lfoG=this._ctx.createGain(); lfoG.gain.value=0.28;
+      lfo.connect(lfoG); lfoG.connect(osc.frequency); // slight pitch wobble
+      // Bandpass to get airy whirr quality
+      const bp=this._ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=baseFreq*1.8; bp.Q.value=0.7;
+      const gainNode=this._ctx.createGain(); gainNode.gain.value=0;
+      osc.connect(bp); bp.connect(gainNode); gainNode.connect(this._master);
+      osc.start(); lfo.start();
+      // Fade in slowly
+      gainNode.gain.setValueAtTime(0,this._ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.038,this._ctx.currentTime+0.6);
+      return {
+        stop: ()=>{ try { const ct=this._ctx.currentTime; gainNode.gain.setValueAtTime(gainNode.gain.value,ct); gainNode.gain.exponentialRampToValueAtTime(0.001,ct+0.9); osc.stop(ct+1.0); lfo.stop(ct+1.0); } catch(e){} }
+      };
+    } catch(e) { return null; }
+  }
+
+  // Harpoon in-flight whirring buzz — start on fire, stop on hit/expire
+  createHarpoonWhirr() {
+    if (!this._ctx) return null;
+    try {
+      const t=this._ctx.currentTime;
+      const osc=this._ctx.createOscillator(); osc.type='sawtooth'; osc.frequency.value=780;
+      const lfo=this._ctx.createOscillator(); lfo.frequency.value=18;
+      const lfoG=this._ctx.createGain(); lfoG.gain.value=28;
+      lfo.connect(lfoG); lfoG.connect(osc.frequency);
+      const g=this._ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.065,t+0.07);
+      osc.connect(g); g.connect(this._master); osc.start(t); lfo.start(t);
+      return {
+        stop: ()=>{ try { const ct=this._ctx.currentTime; g.gain.setValueAtTime(g.gain.value,ct); g.gain.exponentialRampToValueAtTime(0.001,ct+0.1); osc.stop(ct+0.14); lfo.stop(ct+0.14); } catch(e){} }
+      };
+    } catch(e) { return null; }
+  }
 }
 const SFX = new AudioEngine();
 
@@ -631,7 +800,10 @@ class HarpoonProjectile extends Projectile {
     this.attached.pos = this.retractPos.clone();
   }
 
-  onDeactivate() { if (this.attached) { this.attached.caughtBy = null; this.attached = null; } }
+  onDeactivate() {
+    if (this._whirrHandle) { this._whirrHandle.stop(); this._whirrHandle = null; }
+    if (this.attached) { this.attached.caughtBy = null; this.attached = null; }
+  }
 
   _drawRope(ctx, points) {
     if (points.length < 2) return;
@@ -683,6 +855,7 @@ class Mine extends Projectile {
     if (this.age > this.maxAge) { this.active = false; return; }
     if (!this.armed && this.age >= this.armDelay) { this.armed = true; SFX.mineArmed(); }
     if (!this.armed) return;
+    if (rng.chance(dt * 2.2)) SFX.mineTick(); // ~2 ticks/s while armed
     for (const t of targets) {
       if (t === this.owner || !t.alive) continue;
       if (this.pos.distTo(t.pos) < this.triggerR + t.radius) { this._explode(targets, ps); return; }
@@ -810,6 +983,7 @@ class HarpoonAbility extends Ability {
     SFX.harpoonFire();
     const dir=Vec2.fromAngle(Math.random()*Math.PI*2);
     const p=new HarpoonProjectile(this.owner.pos.clone(),dir.scale(this.projectileSpeed),this.owner,this._cfg);
+    p._whirrHandle=SFX.createHarpoonWhirr();
     p._abilityRef=this; projectiles.push(p); this.cdTimer=this.cooldown; this.hasLive=true;
   }
 }
@@ -961,9 +1135,14 @@ class Blade {
       if (rng.chance(dt*Math.min(this.parasites.length,5)*2)) { SFX.poisonTick(); ps.emit(1,{pos:this.pos,color:'#33ff88',speed:35,minSize:1,maxSize:2.5,minLife:0.4,maxLife:1.0,alpha:0.55}); }
     }
     this.parasites.forEach(p=>p.update(dt));
-    if (!this.caughtBy) { this._ai(dt,others,arena,projectiles,ps); this.pos=this.pos.add(this.vel.scale(dt)); arena.constrainEntity(this); }
+    if (!this.caughtBy) { this._ai(dt,others,arena,projectiles,ps); this.pos=this.pos.add(this.vel.scale(dt)); if(arena.constrainEntity(this))SFX.bladeWallHit(); }
     this.trail.push(this.pos.clone()); if (this.trail.length>this.trailMax) this.trail.shift();
-    if (this.health<=0&&this.alive) { this.alive=false; SFX.baybladeKO(); ps.emit(60,{pos:this.pos,color:[this.color,this.glowColor,'#ffffff','#ffaa44'],speed:270,minSize:3,maxSize:12,minLife:0.5,maxLife:1.7}); }
+    if (this.health<=0&&this.alive) {
+      this.alive=false;
+      if(this._spinHandle){this._spinHandle.stop();this._spinHandle=null;}
+      SFX.baybladeKO();
+      ps.emit(60,{pos:this.pos,color:[this.color,this.glowColor,'#ffffff','#ffaa44'],speed:270,minSize:3,maxSize:12,minLife:0.5,maxLife:1.7});
+    }
   }
 
   _ai(dt, others, arena, projectiles, ps) {
@@ -1124,8 +1303,16 @@ class Game {
     this.winner=null; this.projectiles=[]; this.ps=new ParticleSystem();
     this.blades=configs.map(c=>new Blade(c)); this.state='running';
     SFX.resume(); SFX.battleStart();
+    // Start per-blade spinning sound after audio context is live
+    this.blades.forEach(b=>{ b._spinHandle=SFX.createSpinLoop(b.spinRate); });
   }
-  reset() { this.state='idle'; this.winner=null; this.blades=[]; this.projectiles=[]; this.ps=new ParticleSystem(); }
+  reset() {
+    // Stop all spinning sounds before clearing
+    this.blades.forEach(b=>{ if(b._spinHandle){b._spinHandle.stop();b._spinHandle=null;} });
+    // Stop any live harpoon whirrs
+    this.projectiles.forEach(p=>{ if(p._whirrHandle){p._whirrHandle.stop();p._whirrHandle=null;} });
+    this.state='idle'; this.winner=null; this.blades=[]; this.projectiles=[]; this.ps=new ParticleSystem();
+  }
 
   _update(dt) {
     this.arena.update(dt); this.ps.update(dt);
