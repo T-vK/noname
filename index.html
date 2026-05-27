@@ -6,1575 +6,833 @@
   <title>Blade Arena</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: #07071a;
-      color: #d8d8f0;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* ── Header ─────────────────────────────────── */
-    header {
-      width: 100%;
-      padding: 8px 14px;
-      background: linear-gradient(90deg, #0e0e2a, #141430);
-      border-bottom: 1px solid #2a2a55;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-    h1 {
-      font-size: 1.1rem;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      background: linear-gradient(135deg, #5577ff, #ff5577, #ffaa44);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    #state-label {
-      margin-left: auto;
-      font-size: 0.72rem;
-      color: #6666aa;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    /* ── Main layout (mobile-first: column) ─────── */
-    #main {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px;
-      width: 100%;
-      align-items: stretch;
-    }
-
-    /* ── Canvas ─────────────────────────────────── */
-    #canvas-wrap {
-      position: relative;
-      width: 100%;
-    }
-    canvas {
-      display: block;
-      width: 100%;
-      aspect-ratio: 1;
-      max-width: 640px;
-      margin: 0 auto;
-      border-radius: 12px;
-      box-shadow: 0 0 50px rgba(80,100,255,0.12), 0 0 0 1px #1a1a44;
-    }
-
-    /* ── Winner overlay ──────────────────────────── */
-    #winner-overlay {
-      position: absolute;
-      inset: 0;
-      border-radius: 12px;
-      background: rgba(4,4,18,0.80);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      backdrop-filter: blur(3px);
-    }
-    #winner-overlay.visible { display: flex; }
-    #winner-text {
-      font-size: 1.8rem;
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-shadow: 0 0 40px currentColor;
-    }
-    #winner-sub { font-size: 0.8rem; color: #9999cc; }
-
-    /* ── Sidebar (bottom on mobile) ─────────────── */
-    #sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-    }
-
-    /* ── Panel ───────────────────────────────────── */
-    .panel {
-      background: #0d0d22;
-      border: 1px solid #252545;
-      border-radius: 10px;
-      padding: 10px 12px;
-    }
-    .panel-title {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 1.8px;
-      color: #5555aa;
-      margin-bottom: 8px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ── Fighter cards (HORIZONTAL row on mobile) ── */
-    #bay-cards {
-      display: flex;
-      gap: 6px;
-    }
-    .bay-card {
-      flex: 1;
-      min-width: 0;
-      border-radius: 8px;
-      padding: 8px;
-      border: 1px solid transparent;
-    }
-    .bay-header {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    .bay-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .bay-name { font-size: 0.75rem; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bay-icon { font-size: 0.8rem; flex-shrink: 0; }
-
-    .hp-track { background: #181830; border-radius: 4px; height: 5px; overflow: hidden; margin-bottom: 2px; }
-    .hp-fill  { height: 100%; border-radius: 4px; transition: width 0.12s, background 0.4s; }
-    .hp-text  { font-size: 0.62rem; color: #7777aa; margin-bottom: 5px; }
-
-    .cd-row   { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
-    .cd-label { font-size: 0.6rem; color: #6666aa; flex-shrink: 0; }
-    .cd-track { flex: 1; background: #181830; border-radius: 3px; height: 3px; overflow: hidden; }
-    .cd-fill  { height: 100%; border-radius: 3px; transition: width 0.08s; }
-
-    .status-row { display: flex; flex-wrap: wrap; gap: 3px; min-height: 16px; }
-    .chip {
-      font-size: 0.58rem;
-      padding: 1px 5px;
-      border-radius: 8px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    /* ── Controls ─────────────────────────────────── */
-    .ctrl-row { display: flex; gap: 6px; }
-    button {
-      flex: 1;
-      padding: 8px 10px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    button:hover   { opacity: 0.88; transform: translateY(-1px); }
-    button:active  { transform: translateY(0); }
-    button:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
-    #btn-start { background: linear-gradient(135deg, #4455ee, #8844ee); color: #fff; }
-    #btn-reset { background: #1e1e40; color: #9999cc; flex: 0 0 auto; padding: 8px 11px; }
-
-    /* ── Config panel ─────────────────────────────── */
-    .cfg-toggle-btn {
-      margin-left: auto;
-      background: transparent;
-      border: none;
-      color: #5555aa;
-      font-size: 0.72rem;
-      cursor: pointer;
-      padding: 0;
-      font-weight: 700;
-      transition: color 0.2s;
-      flex: none;
-    }
-    .cfg-toggle-btn:hover { color: #8888cc; transform: none; }
-
-    #config-body { display: none; margin-top: 6px; }
-    #config-body.open { display: block; }
-
-    .cfg-section {
-      font-size: 0.62rem;
-      color: #5555aa;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      margin: 8px 0 5px;
-      font-weight: 700;
-    }
-    .cfg-row  { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-    .cfg-label { font-size: 0.68rem; color: #8888bb; width: 74px; flex-shrink: 0; }
-    .cfg-slider { flex: 1; accent-color: #5577cc; cursor: pointer; }
-    .cfg-val  { font-size: 0.68rem; color: #aaaadd; width: 36px; text-align: right; flex-shrink: 0; }
-
-    /* Ability selects inside config */
-    .cfg-ability-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 5px;
-    }
-    .cfg-ability-label {
-      font-size: 0.68rem;
-      color: #8888bb;
-      width: 74px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .ability-select {
-      flex: 1;
-      background: #131330;
-      border: 1px solid #333366;
-      border-radius: 6px;
-      color: #d0d0f8;
-      padding: 4px 7px;
-      font-size: 0.72rem;
-      cursor: pointer;
-      outline: none;
-    }
-    .ability-select:focus    { border-color: #5577cc; }
-    .ability-select:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* ── Legend (hidden on mobile by default) ─────── */
-    #legend-panel { display: none; }
-
-    .legend-entry { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
-    .legend-entry:last-child { margin-bottom: 0; }
-    .legend-icon-box {
-      width: 24px; height: 24px; border-radius: 5px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
-    }
-    .legend-name { font-weight: 700; color: #ccccee; margin-bottom: 1px; font-size: 0.72rem; }
-    .legend-desc { color: #7777aa; font-size: 0.65rem; line-height: 1.3; }
-
-    /* ── Desktop layout (side by side) ───────────── */
-    @media (min-width: 820px) {
-      header { padding: 10px 24px; }
-      h1 { font-size: 1.35rem; }
-
-      #main {
-        flex-direction: row;
-        align-items: flex-start;
-        padding: 14px;
-        gap: 16px;
-        max-width: 1180px;
-        margin: 0 auto;
-      }
-
-      #canvas-wrap { flex-shrink: 0; width: auto; }
-
-      canvas {
-        width: 640px;
-        aspect-ratio: unset;
-        height: 640px;
-      }
-
-      #sidebar {
-        width: 260px;
-        flex-shrink: 0;
-        min-width: 240px;
-      }
-
-      /* Cards vertical again on desktop */
-      #bay-cards { flex-direction: column; gap: 8px; }
-      .bay-card  { padding: 10px; }
-      .bay-name  { font-size: 0.85rem; }
-      .bay-icon  { font-size: 0.9rem; }
-      .hp-text   { font-size: 0.7rem; }
-      .chip      { font-size: 0.66rem; padding: 2px 6px; }
-
-      #legend-panel { display: block; }
-
-      .panel { padding: 13px; }
+    body { background:#07071a; color:#d8d8f0; font-family:'Segoe UI',system-ui,sans-serif; min-height:100dvh; display:flex; flex-direction:column; align-items:center; }
+    header { width:100%; padding:8px 14px; background:linear-gradient(90deg,#0e0e2a,#141430); border-bottom:1px solid #2a2a55; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    h1 { font-size:1.1rem; font-weight:800; letter-spacing:3px; text-transform:uppercase; background:linear-gradient(135deg,#5577ff,#ff5577,#ffaa44); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    #state-label { margin-left:auto; font-size:0.72rem; color:#6666aa; letter-spacing:1px; text-transform:uppercase; }
+    #main { display:flex; flex-direction:column; gap:8px; padding:8px; width:100%; align-items:stretch; }
+    #canvas-wrap { position:relative; width:100%; }
+    canvas { display:block; width:100%; aspect-ratio:1; max-width:640px; margin:0 auto; border-radius:12px; box-shadow:0 0 50px rgba(80,100,255,.12),0 0 0 1px #1a1a44; }
+    #winner-overlay { position:absolute; inset:0; border-radius:12px; background:rgba(4,4,18,.80); display:none; flex-direction:column; align-items:center; justify-content:center; gap:8px; backdrop-filter:blur(3px); }
+    #winner-overlay.visible { display:flex; }
+    #winner-text { font-size:1.8rem; font-weight:900; letter-spacing:2px; text-transform:uppercase; text-shadow:0 0 40px currentColor; }
+    #winner-sub { font-size:.8rem; color:#9999cc; }
+    #sidebar { display:flex; flex-direction:column; gap:8px; width:100%; }
+    .panel { background:#0d0d22; border:1px solid #252545; border-radius:10px; padding:10px 12px; }
+    .panel-title { font-size:.65rem; text-transform:uppercase; letter-spacing:1.8px; color:#5555aa; margin-bottom:8px; font-weight:700; display:flex; align-items:center; gap:6px; }
+    #bay-cards { display:flex; gap:6px; }
+    .bay-card { flex:1; min-width:0; border-radius:8px; padding:8px; border:1px solid transparent; }
+    .bay-header { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+    .bay-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .bay-name { font-size:.72rem; font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bay-icon { font-size:.78rem; flex-shrink:0; }
+    .hp-track { background:#181830; border-radius:4px; height:5px; overflow:hidden; margin-bottom:2px; }
+    .hp-fill { height:100%; border-radius:4px; transition:width .12s,background .4s; }
+    .hp-text { font-size:.6rem; color:#7777aa; margin-bottom:5px; }
+    .cd-row { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+    .cd-label { font-size:.6rem; color:#6666aa; flex-shrink:0; }
+    .cd-track { flex:1; background:#181830; border-radius:3px; height:3px; overflow:hidden; }
+    .cd-fill { height:100%; border-radius:3px; transition:width .08s; }
+    .status-row { display:flex; flex-wrap:wrap; gap:3px; min-height:16px; }
+    .chip { font-size:.58rem; padding:1px 5px; border-radius:8px; font-weight:600; white-space:nowrap; }
+    .ctrl-row { display:flex; gap:6px; }
+    button { flex:1; padding:8px 10px; border:none; border-radius:8px; cursor:pointer; font-size:.8rem; font-weight:700; letter-spacing:.3px; transition:opacity .15s,transform .1s; }
+    button:hover { opacity:.88; transform:translateY(-1px); }
+    button:active { transform:translateY(0); }
+    button:disabled { opacity:.38; cursor:not-allowed; transform:none; }
+    #btn-start { background:linear-gradient(135deg,#4455ee,#8844ee); color:#fff; }
+    #btn-reset { background:#1e1e40; color:#9999cc; flex:0 0 auto; padding:8px 11px; }
+    .cfg-toggle-btn { margin-left:auto; background:transparent; border:none; color:#5555aa; font-size:.72rem; cursor:pointer; padding:0; font-weight:700; transition:color .2s; flex:none; }
+    .cfg-toggle-btn:hover { color:#8888cc; transform:none; }
+    #config-body { display:none; margin-top:6px; }
+    #config-body.open { display:block; }
+    .cfg-section { font-size:.62rem; color:#5555aa; text-transform:uppercase; letter-spacing:1.2px; margin:8px 0 5px; font-weight:700; }
+    .cfg-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+    .cfg-label { font-size:.68rem; color:#8888bb; width:74px; flex-shrink:0; }
+    .cfg-slider { flex:1; accent-color:#5577cc; cursor:pointer; }
+    .cfg-val { font-size:.68rem; color:#aaaadd; width:36px; text-align:right; flex-shrink:0; }
+    .cfg-ability-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+    .cfg-ability-label { font-size:.68rem; color:#8888bb; width:74px; flex-shrink:0; display:flex; align-items:center; gap:5px; }
+    .ability-select { flex:1; background:#131330; border:1px solid #333366; border-radius:6px; color:#d0d0f8; padding:4px 7px; font-size:.72rem; cursor:pointer; outline:none; }
+    .ability-select:focus { border-color:#5577cc; }
+    .ability-select:disabled { opacity:.4; cursor:not-allowed; }
+    #legend-panel { display:none; }
+    .legend-entry { display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; }
+    .legend-entry:last-child { margin-bottom:0; }
+    .legend-icon-box { width:24px; height:24px; border-radius:5px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.85rem; }
+    .legend-name { font-weight:700; color:#ccccee; margin-bottom:1px; font-size:.72rem; }
+    .legend-desc { color:#7777aa; font-size:.65rem; line-height:1.3; }
+    @media (min-width:820px) {
+      header { padding:10px 24px; } h1 { font-size:1.35rem; }
+      #main { flex-direction:row; align-items:flex-start; padding:14px; gap:16px; max-width:1180px; margin:0 auto; }
+      #canvas-wrap { flex-shrink:0; width:auto; }
+      canvas { width:640px; aspect-ratio:unset; height:640px; }
+      #sidebar { width:260px; flex-shrink:0; min-width:240px; }
+      #bay-cards { flex-direction:column; gap:8px; }
+      .bay-card { padding:10px; } .bay-name { font-size:.85rem; } .bay-icon { font-size:.9rem; }
+      .hp-text { font-size:.7rem; } .chip { font-size:.66rem; padding:2px 6px; }
+      #legend-panel { display:block; } .panel { padding:13px; }
     }
   </style>
 </head>
 <body>
-
-<header>
-  <h1>⚡ Blade Arena</h1>
-  <div id="state-label">Ready</div>
-</header>
-
+<header><h1>⚡ Blade Arena</h1><div id="state-label">Ready</div></header>
 <div id="main">
   <div id="canvas-wrap">
     <canvas id="arena" width="640" height="640"></canvas>
-    <div id="winner-overlay">
-      <div id="winner-text">—</div>
-      <div id="winner-sub">Tap Play Again to restart</div>
-    </div>
+    <div id="winner-overlay"><div id="winner-text">—</div><div id="winner-sub">Tap Play Again to restart</div></div>
   </div>
-
   <div id="sidebar">
-    <!-- Fighter cards -->
-    <div class="panel">
-      <div class="panel-title">Fighters</div>
-      <div id="bay-cards"></div>
-    </div>
-
-    <!-- Controls -->
-    <div class="panel">
-      <div class="panel-title">Controls</div>
-      <div class="ctrl-row">
-        <button id="btn-start">▶ Start</button>
-        <button id="btn-reset" title="Reset">↺</button>
-      </div>
-    </div>
-
-    <!-- Config (ability selects + sliders) -->
-    <div class="panel">
-      <div class="panel-title">
-        ⚙ Setup
-        <button class="cfg-toggle-btn" id="cfg-toggle">▼ show</button>
-      </div>
-      <div id="config-body"></div>
-    </div>
-
-    <!-- Legend (desktop only) -->
-    <div class="panel" id="legend-panel">
-      <div class="panel-title">Ability Guide</div>
-      <div id="ability-legend"></div>
-    </div>
+    <div class="panel"><div class="panel-title">Fighters</div><div id="bay-cards"></div></div>
+    <div class="panel"><div class="panel-title">Controls</div><div class="ctrl-row"><button id="btn-start">▶ Start</button><button id="btn-reset" title="Reset">↺</button></div></div>
+    <div class="panel"><div class="panel-title">⚙ Setup<button class="cfg-toggle-btn" id="cfg-toggle">▼ show</button></div><div id="config-body"></div></div>
+    <div class="panel" id="legend-panel"><div class="panel-title">Ability Guide</div><div id="ability-legend"></div></div>
   </div>
 </div>
-
 <script>
 'use strict';
-
-/* ═══════════════════════════════════════════════════
-   GAME CONFIG
-═══════════════════════════════════════════════════ */
+/* ── CONFIG ─────────────────────────────────────────────── */
 const GameConfig = {
-  health:           200,
-  speedMult:        1.0,
-  harpoonBounces:   14,
-  harpoonCooldown:  4.5,
-  harpoonDamage:    15,
-  harpoonSlam:      40,
-  harpoonSpeed:     500,
-  harpoonRetract:   370,
-  parasiteDPS:      2.5,
-  maxParasites:     9,
-  parasiteCooldown: 0.7,
-  stormDamage:      28,
-  stormRange:       130,
-  stormCooldown:    5,
-  mineDamage:       65,
-  maxMines:         7,
-  mineCooldown:     2.0,
-  mineArmDelay:     0.35,
-  mineTriggerR:     42,
-  volume:           0.65,
+  health:200, speedMult:1.0,
+  harpoonBounces:14, harpoonCooldown:4.5, harpoonDamage:15, harpoonSlam:40, harpoonSpeed:500, harpoonRetract:370,
+  parasiteDPS:2.5, maxParasites:9, parasiteCooldown:0.7,
+  stormDamage:28, stormRange:130, stormCooldown:5,
+  mineDamage:65, maxMines:7, mineCooldown:2.0, mineArmDelay:0.35, mineTriggerR:42,
+  fireDamage:12, fireBurnDps:5, fireBurnDur:3.5, fireCooldown:3.5,
+  iceDamage:14, iceSlowDur:2.8, iceSlowFactor:0.3, iceCooldown:2.8,
+  volume:0.65,
 };
 
-/* ═══════════════════════════════════════════════════
-   MATH
-═══════════════════════════════════════════════════ */
+/* ── MATH ───────────────────────────────────────────────── */
 class Vec2 {
-  constructor(x = 0, y = 0) { this.x = x; this.y = y; }
-  add(v)    { return new Vec2(this.x + v.x, this.y + v.y); }
-  sub(v)    { return new Vec2(this.x - v.x, this.y - v.y); }
-  scale(s)  { return new Vec2(this.x * s,   this.y * s);   }
-  dot(v)    { return this.x * v.x + this.y * v.y; }
-  len()     { return Math.sqrt(this.x * this.x + this.y * this.y); }
-  normalize() { const l = this.len(); return l > 1e-9 ? this.scale(1/l) : new Vec2(1,0); }
-  reflect(n)  { return this.sub(n.scale(2 * this.dot(n))); }
-  distTo(v)   { return this.sub(v).len(); }
-  clone()     { return new Vec2(this.x, this.y); }
-  perp()      { return new Vec2(-this.y, this.x); }
-  static fromAngle(a) { return new Vec2(Math.cos(a), Math.sin(a)); }
-  static lerp(a, b, t) { return a.add(b.sub(a).scale(t)); }
-  static random()     { return Vec2.fromAngle(Math.random() * Math.PI * 2); }
+  constructor(x=0,y=0){this.x=x;this.y=y;}
+  add(v){return new Vec2(this.x+v.x,this.y+v.y);}
+  sub(v){return new Vec2(this.x-v.x,this.y-v.y);}
+  scale(s){return new Vec2(this.x*s,this.y*s);}
+  dot(v){return this.x*v.x+this.y*v.y;}
+  len(){return Math.sqrt(this.x*this.x+this.y*this.y);}
+  normalize(){const l=this.len();return l>1e-9?this.scale(1/l):new Vec2(1,0);}
+  reflect(n){return this.sub(n.scale(2*this.dot(n)));}
+  distTo(v){return this.sub(v).len();}
+  clone(){return new Vec2(this.x,this.y);}
+  perp(){return new Vec2(-this.y,this.x);}
+  static fromAngle(a){return new Vec2(Math.cos(a),Math.sin(a));}
+  static lerp(a,b,t){return a.add(b.sub(a).scale(t));}
+  static random(){return Vec2.fromAngle(Math.random()*Math.PI*2);}
 }
+const rng={range:(a,b)=>a+Math.random()*(b-a),pick:arr=>arr[Math.floor(Math.random()*arr.length)],chance:p=>Math.random()<p};
 
-const rng = {
-  range:  (a, b) => a + Math.random() * (b - a),
-  pick:   arr => arr[Math.floor(Math.random() * arr.length)],
-  chance: p => Math.random() < p,
-};
-
-/* ═══════════════════════════════════════════════════
-   PARTICLES
-═══════════════════════════════════════════════════ */
+/* ── PARTICLES ──────────────────────────────────────────── */
 class Particle {
-  constructor({ pos, vel, color, life, size, alpha = 1 }) {
-    this.pos = pos.clone(); this.vel = vel.clone();
-    this.color = color; this.life = life; this.max = life;
-    this.size = size; this.alpha = alpha;
-  }
-  get t() { return this.life / this.max; }
-  get alive() { return this.life > 0; }
-  update(dt) {
-    this.pos  = this.pos.add(this.vel.scale(dt));
-    this.vel  = this.vel.scale(Math.max(0, 1 - dt * 3.5));
-    this.life -= dt;
-  }
-  render(ctx) {
-    ctx.globalAlpha = this.t * this.alpha;
-    ctx.fillStyle   = this.color;
-    ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, Math.max(0.3, this.size * this.t), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
+  constructor({pos,vel,color,life,size,alpha=1}){this.pos=pos.clone();this.vel=vel.clone();this.color=color;this.life=life;this.max=life;this.size=size;this.alpha=alpha;}
+  get t(){return this.life/this.max;} get alive(){return this.life>0;}
+  update(dt){this.pos=this.pos.add(this.vel.scale(dt));this.vel=this.vel.scale(Math.max(0,1-dt*3.5));this.life-=dt;}
+  render(ctx){ctx.globalAlpha=this.t*this.alpha;ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.pos.x,this.pos.y,Math.max(0.3,this.size*this.t),0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
 }
-
 class ParticleSystem {
-  constructor() { this.list = []; }
-  emit(count, opts) {
-    for (let i = 0; i < count; i++) {
-      const angle = opts.angle !== undefined
-        ? opts.angle + rng.range(-(opts.spread ?? Math.PI), opts.spread ?? Math.PI)
-        : Math.random() * Math.PI * 2;
-      const speed = (opts.speed ?? 120) * rng.range(0.4, 1.6);
-      this.list.push(new Particle({
-        pos:   opts.pos,
-        vel:   Vec2.fromAngle(angle).scale(speed).add(opts.baseVel ?? new Vec2()),
-        color: Array.isArray(opts.color) ? rng.pick(opts.color) : opts.color,
-        life:  rng.range(opts.minLife ?? 0.3, opts.maxLife ?? 0.8),
-        size:  rng.range(opts.minSize ?? 2,   opts.maxSize ?? 6),
-        alpha: opts.alpha ?? 1,
-      }));
+  constructor(){this.list=[];}
+  emit(count,opts){
+    for(let i=0;i<count;i++){
+      const angle=opts.angle!==undefined?opts.angle+rng.range(-(opts.spread??Math.PI),opts.spread??Math.PI):Math.random()*Math.PI*2;
+      const speed=(opts.speed??120)*rng.range(0.4,1.6);
+      this.list.push(new Particle({pos:opts.pos,vel:Vec2.fromAngle(angle).scale(speed).add(opts.baseVel??new Vec2()),color:Array.isArray(opts.color)?rng.pick(opts.color):opts.color,life:rng.range(opts.minLife??0.3,opts.maxLife??0.8),size:rng.range(opts.minSize??2,opts.maxSize??6),alpha:opts.alpha??1}));
     }
   }
-  update(dt) { this.list = this.list.filter(p => { p.update(dt); return p.alive; }); }
-  render(ctx) { this.list.forEach(p => p.render(ctx)); }
+  update(dt){this.list=this.list.filter(p=>{p.update(dt);return p.alive;});}
+  render(ctx){this.list.forEach(p=>p.render(ctx));}
 }
 
-/* ═══════════════════════════════════════════════════
-   AUDIO ENGINE  (Web Audio API, zero external files)
-═══════════════════════════════════════════════════ */
+/* ── AUDIO ──────────────────────────────────────────────── */
 class AudioEngine {
-  constructor() {
-    this._ctx = null; this._master = null; this._nbuf = null; this._last = {};
-    this._tryInit();
-  }
-  _tryInit() {
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      this._ctx    = new AC();
-      this._master = this._ctx.createGain();
-      this._master.gain.value = GameConfig.volume;
-      this._master.connect(this._ctx.destination);
-    } catch (_) { this._ctx = null; }
-  }
-  resume()      { if (this._ctx?.state === 'suspended') this._ctx.resume(); }
-  setVolume(v)  { if (this._master) this._master.gain.value = v; }
-  get enabled() { return !!this._ctx; }
-  _gate(key, ms = 60) {
-    const now = Date.now();
-    if (now - (this._last[key] ?? 0) < ms) return false;
-    this._last[key] = now; return true;
-  }
-  _env(peak, atk, sus, rel, dest) {
-    const g = this._ctx.createGain(), t = this._ctx.currentTime;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + atk);
-    if (sus > 0) g.gain.setValueAtTime(peak, t + atk + sus);
-    g.gain.exponentialRampToValueAtTime(1e-4, t + atk + sus + rel);
-    g.connect(dest ?? this._master);
-    return [g, t];
-  }
-  _osc(type, f0, f1, peak, atk, sus, rel, dest) {
-    if (!this._ctx) return;
-    const [g, t] = this._env(peak, atk, sus, rel, dest);
-    const o = this._ctx.createOscillator();
-    o.type = type; o.frequency.setValueAtTime(f0, t);
-    if (f1 != null) o.frequency.exponentialRampToValueAtTime(f1, t + atk + sus + rel);
-    o.connect(g); o.start(t); o.stop(t + atk + sus + rel + 0.06);
-  }
-  _noiseBuffer() {
-    if (!this._nbuf || this._nbuf.sampleRate !== this._ctx.sampleRate) {
-      const sr = this._ctx.sampleRate, buf = this._ctx.createBuffer(1, sr, sr), d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      this._nbuf = buf;
-    }
-    return this._nbuf;
-  }
-  _noise(peak, atk, sus, rel, bpFreq, bpQ = 3, dest) {
-    if (!this._ctx) return;
-    const [g, t] = this._env(peak, atk, sus, rel, dest);
-    const src = this._ctx.createBufferSource();
-    src.buffer = this._noiseBuffer(); src.loop = true;
-    let node = src;
-    if (bpFreq) {
-      const f = this._ctx.createBiquadFilter();
-      f.type = 'bandpass'; f.frequency.value = bpFreq; f.Q.value = bpQ;
-      src.connect(f); node = f;
-    }
-    node.connect(g); src.start(t); src.stop(t + atk + sus + rel + 0.12);
-  }
-  // ── Fire / travel ──────────────────────────────────────────────
-  harpoonFire() {
-    if (!this._ctx || !this._gate('hFire',200)) return;
-    // Clank + sharp downward whoosh
-    this._noise(0.28,0.002,0.008,0.06,3400,10);
-    this._osc('sawtooth',1100,160,0.2,0.003,0,0.24,null);
-  }
+  constructor(){this._ctx=null;this._master=null;this._nbuf=null;this._last={};this._tryInit();}
+  _tryInit(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;this._ctx=new AC();this._master=this._ctx.createGain();this._master.gain.value=GameConfig.volume;this._master.connect(this._ctx.destination);}catch(_){this._ctx=null;}}
+  resume(){if(this._ctx?.state==='suspended')this._ctx.resume();}
+  setVolume(v){if(this._master)this._master.gain.value=v;}
+  get enabled(){return!!this._ctx;}
+  _gate(k,ms=60){const now=Date.now();if(now-(this._last[k]??0)<ms)return false;this._last[k]=now;return true;}
+  _env(peak,atk,sus,rel,dest){const g=this._ctx.createGain(),t=this._ctx.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+atk);if(sus>0)g.gain.setValueAtTime(peak,t+atk+sus);g.gain.exponentialRampToValueAtTime(1e-4,t+atk+sus+rel);g.connect(dest??this._master);return[g,t];}
+  _osc(type,f0,f1,peak,atk,sus,rel,dest){if(!this._ctx)return;const[g,t]=this._env(peak,atk,sus,rel,dest);const o=this._ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1!=null)o.frequency.exponentialRampToValueAtTime(f1,t+atk+sus+rel);o.connect(g);o.start(t);o.stop(t+atk+sus+rel+0.06);}
+  _noiseBuffer(){if(!this._nbuf||this._nbuf.sampleRate!==this._ctx.sampleRate){const sr=this._ctx.sampleRate,buf=this._ctx.createBuffer(1,sr,sr),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;this._nbuf=buf;}return this._nbuf;}
+  _noise(peak,atk,sus,rel,bpFreq,bpQ=3,dest){if(!this._ctx)return;const[g,t]=this._env(peak,atk,sus,rel,dest);const src=this._ctx.createBufferSource();src.buffer=this._noiseBuffer();src.loop=true;let node=src;if(bpFreq){const f=this._ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=bpFreq;f.Q.value=bpQ;src.connect(f);node=f;}node.connect(g);src.start(t);src.stop(t+atk+sus+rel+0.12);}
 
-  // Metallic multi-harmonic ricochet
-  harpoonBounce() {
-    if (!this._ctx || !this._gate('hBounce',40)) return;
-    const t=this._ctx.currentTime, base=480+Math.random()*720;
-    [1,1.52,2.18].forEach((m,i)=>{
-      const o=this._ctx.createOscillator(); o.type='triangle';
-      o.frequency.setValueAtTime(base*m,t);
-      o.frequency.exponentialRampToValueAtTime(base*m*0.38,t+0.13);
-      const g=this._ctx.createGain(); g.gain.setValueAtTime(0.15-i*0.04,t);
-      g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
-      o.connect(g); g.connect(this._master); o.start(t); o.stop(t+0.2);
-    });
+  // Harpoon — shoot, bounce, hit, retract, slam (no continuous whirr)
+  harpoonFire(){if(!this._ctx||!this._gate('hFire',200))return;this._noise(0.28,0.002,0.008,0.06,3400,10);this._osc('sawtooth',1100,160,0.2,0.003,0,0.24,null);}
+  harpoonBounce(){
+    if(!this._ctx||!this._gate('hBounce',40))return;
+    const t=this._ctx.currentTime,base=480+Math.random()*720;
+    [1,1.52,2.18].forEach((m,i)=>{const o=this._ctx.createOscillator();o.type='triangle';o.frequency.setValueAtTime(base*m,t);o.frequency.exponentialRampToValueAtTime(base*m*0.38,t+0.13);const g=this._ctx.createGain();g.gain.setValueAtTime(0.15-i*0.04,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);o.connect(g);g.connect(this._master);o.start(t);o.stop(t+0.2);});
     this._noise(0.09,0.001,0,0.05,3800,10);
   }
-
-  // Zap + thud on hook landing
-  harpoonHit() {
-    if (!this._ctx) return;
-    this._osc('square',1500,95,0.26,0.002,0,0.18,null);
-    this._noise(0.38,0.002,0.015,0.13,140,1.8);
+  harpoonHit(){if(!this._ctx)return;this._osc('square',1500,95,0.26,0.002,0,0.18,null);this._noise(0.38,0.002,0.015,0.13,140,1.8);}
+  harpoonRetract(){if(!this._ctx)return;this._osc('sawtooth',140,480,0.1,0.025,0.6,0.2,null);this._noise(0.055,0.015,0.5,0.2,360,4);}
+  harpoonSlam(){
+    if(!this._ctx)return;const t=this._ctx.currentTime;
+    const p=this._ctx.createOscillator();p.type='sine';p.frequency.setValueAtTime(220,t);p.frequency.exponentialRampToValueAtTime(38,t+0.22);
+    const pg=this._ctx.createGain();pg.gain.setValueAtTime(0.75,t);pg.gain.exponentialRampToValueAtTime(0.001,t+0.38);p.connect(pg);pg.connect(this._master);p.start(t);p.stop(t+0.42);
+    const r=this._ctx.createOscillator();r.type='triangle';r.frequency.setValueAtTime(880,t);
+    const rg=this._ctx.createGain();rg.gain.setValueAtTime(0.14,t);rg.gain.exponentialRampToValueAtTime(0.001,t+0.4);r.connect(rg);rg.connect(this._master);r.start(t);r.stop(t+0.44);
+    this._noise(0.48,0.002,0.018,0.22,260,1.6);this._noise(0.22,0.001,0,0.06,5200,7);
   }
-
-  // Rising mechanical chain-reel whirr
-  harpoonRetract() {
-    if (!this._ctx) return;
-    this._osc('sawtooth',140,480,0.1,0.025,0.6,0.2,null);
-    this._noise(0.055,0.015,0.5,0.2,360,4);
-  }
-
-  // Heavy metallic slam: punch + ring + crack
-  harpoonSlam() {
-    if (!this._ctx) return;
-    const t=this._ctx.currentTime;
-    // Sub punch
-    const p=this._ctx.createOscillator(); p.type='sine';
-    p.frequency.setValueAtTime(220,t); p.frequency.exponentialRampToValueAtTime(38,t+0.22);
-    const pg=this._ctx.createGain(); pg.gain.setValueAtTime(0.75,t); pg.gain.exponentialRampToValueAtTime(0.001,t+0.38);
-    p.connect(pg); pg.connect(this._master); p.start(t); p.stop(t+0.42);
-    // Metal ring decay
-    const r=this._ctx.createOscillator(); r.type='triangle';
-    r.frequency.setValueAtTime(880,t);
-    const rg=this._ctx.createGain(); rg.gain.setValueAtTime(0.14,t); rg.gain.exponentialRampToValueAtTime(0.001,t+0.4);
-    r.connect(rg); rg.connect(this._master); r.start(t); r.stop(t+0.44);
-    // Mid thud noise
-    this._noise(0.48,0.002,0.018,0.22,260,1.6);
-    // High crack
-    this._noise(0.22,0.001,0,0.06,5200,7);
-  }
-
-  // ── Biological ─────────────────────────────────────────────────
-  parasiteInfect() {
-    if (!this._ctx || !this._gate('pInfect',100)) return;
-    const t=this._ctx.currentTime, osc=this._ctx.createOscillator();
-    osc.type='square'; osc.frequency.setValueAtTime(72,t);
-    const lfo=this._ctx.createOscillator(), lg=this._ctx.createGain();
-    lfo.frequency.value=30; lg.gain.value=48; lfo.connect(lg); lg.connect(osc.frequency);
-    const [g]=this._env(0.18,0.008,0,0.28,null); osc.connect(g);
-    osc.start(t); osc.stop(t+0.36); lfo.start(t); lfo.stop(t+0.36);
+  // Parasite
+  parasiteInfect(){
+    if(!this._ctx||!this._gate('pInfect',100))return;
+    const t=this._ctx.currentTime,osc=this._ctx.createOscillator();osc.type='square';osc.frequency.setValueAtTime(72,t);
+    const lfo=this._ctx.createOscillator(),lg=this._ctx.createGain();lfo.frequency.value=30;lg.gain.value=48;lfo.connect(lg);lg.connect(osc.frequency);
+    const[g]=this._env(0.18,0.008,0,0.28,null);osc.connect(g);osc.start(t);osc.stop(t+0.36);lfo.start(t);lfo.stop(t+0.36);
     this._osc('sine',330,175,0.09,0.005,0,0.18,null);
   }
-  poisonTick() { if (!this._ctx || !this._gate('pTick',220)) return; this._noise(0.04,0.003,0.01,0.08,950,11); this._osc('sine',460,290,0.03,0.003,0,0.1,null); }
-
-  // ── Arena / environment ────────────────────────────────────────
-  // Blade hits the arena wall
-  bladeWallHit() {
-    if (!this._ctx || !this._gate('bladeWall',80)) return;
-    this._noise(0.13,0.001,0,0.09,1300,8);
-    this._osc('triangle',310,145,0.1,0.002,0,0.11,null);
+  poisonTick(){if(!this._ctx||!this._gate('pTick',220))return;this._noise(0.04,0.003,0.01,0.08,950,11);this._osc('sine',460,290,0.03,0.003,0,0.1,null);}
+  // Wall / collisions
+  bladeWallHit(){if(!this._ctx||!this._gate('bladeWall',80))return;this._noise(0.13,0.001,0,0.09,1300,8);this._osc('triangle',310,145,0.1,0.002,0,0.11,null);}
+  bladeStorm(){if(!this._ctx)return;this._osc('sawtooth',270,840,0.22,0.02,0.1,0.38,null);this._osc('sawtooth',135,420,0.12,0.02,0.1,0.38,null);this._noise(0.18,0.01,0.15,0.28,580,3);}
+  // Mines
+  mineLay(){if(!this._ctx||!this._gate('mLay',160))return;this._noise(0.11,0.002,0,0.04,2400,13);this._osc('sine',1100,880,0.09,0.004,0.05,0.13,null);}
+  mineArmed(){if(!this._ctx||!this._gate('mArmed',180))return;this._osc('sine',900,1120,0.07,0.003,0.02,0.09,null);}
+  mineTick(){if(!this._ctx||!this._gate('mineTick',290))return;this._osc('sine',1380,1240,0.042,0.002,0.008,0.038,null);}
+  mineExplode(){
+    if(!this._ctx)return;const t=this._ctx.currentTime;
+    const punch=this._ctx.createOscillator();punch.type='sine';punch.frequency.setValueAtTime(320,t);punch.frequency.exponentialRampToValueAtTime(28,t+0.19);
+    const pg=this._ctx.createGain();pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(0.88,t+0.004);pg.gain.exponentialRampToValueAtTime(0.001,t+0.38);punch.connect(pg);pg.connect(this._master);punch.start(t);punch.stop(t+0.42);
+    const sub=this._ctx.createOscillator();sub.type='sine';sub.frequency.setValueAtTime(58,t+0.04);sub.frequency.exponentialRampToValueAtTime(20,t+1.0);
+    const sg=this._ctx.createGain();sg.gain.setValueAtTime(0,t);sg.gain.linearRampToValueAtTime(0.55,t+0.06);sg.gain.exponentialRampToValueAtTime(0.001,t+1.1);sub.connect(sg);sg.connect(this._master);sub.start(t);sub.stop(t+1.2);
+    this._noise(0.52,0.002,0.04,0.38,null);this._noise(0.38,0.001,0.004,0.065,5800,5);
+    setTimeout(()=>{if(!this._ctx)return;this._noise(0.11,0.01,0.06,0.28,280,1.2);},95);
   }
-
-  // ── Blade Storm ────────────────────────────────────────────────
-  bladeStorm() {
-    if (!this._ctx) return;
-    this._osc('sawtooth',270,840,0.22,0.02,0.1,0.38,null);
-    this._osc('sawtooth',135,420,0.12,0.02,0.1,0.38,null);
-    this._noise(0.18,0.01,0.15,0.28,580,3);
-  }
-
-  // ── Mines ──────────────────────────────────────────────────────
-  mineLay()   { if (!this._ctx || !this._gate('mLay',160)) return; this._noise(0.11,0.002,0,0.04,2400,13); this._osc('sine',1100,880,0.09,0.004,0.05,0.13,null); }
-  mineArmed() { if (!this._ctx || !this._gate('mArmed',180)) return; this._osc('sine',900,1120,0.07,0.003,0.02,0.09,null); }
-  // Periodic ticking while armed
-  mineTick()  { if (!this._ctx || !this._gate('mineTick',290)) return; this._osc('sine',1380,1240,0.042,0.002,0.008,0.038,null); }
-
-  // Complete redesign: sharp punch → rumble → debris layers
-  mineExplode() {
-    if (!this._ctx) return;
-    const t=this._ctx.currentTime;
-    // 1. Transient punch: fast frequency drop (the "thwump")
-    const punch=this._ctx.createOscillator(); punch.type='sine';
-    punch.frequency.setValueAtTime(320,t); punch.frequency.exponentialRampToValueAtTime(28,t+0.19);
-    const pg=this._ctx.createGain(); pg.gain.setValueAtTime(0.0,t);
-    pg.gain.linearRampToValueAtTime(0.88,t+0.004); pg.gain.exponentialRampToValueAtTime(0.001,t+0.38);
-    punch.connect(pg); pg.connect(this._master); punch.start(t); punch.stop(t+0.42);
-    // 2. Sub rumble tail
-    const sub=this._ctx.createOscillator(); sub.type='sine';
-    sub.frequency.setValueAtTime(58,t+0.04); sub.frequency.exponentialRampToValueAtTime(20,t+1.0);
-    const sg=this._ctx.createGain(); sg.gain.setValueAtTime(0,t);
-    sg.gain.linearRampToValueAtTime(0.55,t+0.06); sg.gain.exponentialRampToValueAtTime(0.001,t+1.1);
-    sub.connect(sg); sg.connect(this._master); sub.start(t); sub.stop(t+1.2);
-    // 3. Mid-range body noise (NOT bandpassed — use all freqs)
-    this._noise(0.52,0.002,0.04,0.38,null);
-    // 4. High debris crack (short, transient)
-    this._noise(0.38,0.001,0.004,0.065,5800,5);
-    // 5. Delayed room bounce simulation
-    setTimeout(()=>{ if(!this._ctx)return; this._noise(0.11,0.01,0.06,0.28,280,1.2); },95);
-  }
-
-  // ── Collisions ────────────────────────────────────────────────
-  // Blade-to-blade: thud body + metallic ring, intensity-scaled
-  collision(spd=50) {
-    if (!this._ctx || !this._gate('col',70)) return;
-    const t=this._ctx.currentTime, intens=Math.min(1,spd/180);
-    // Body thud
-    const o=this._ctx.createOscillator(); o.type='sine';
-    o.frequency.setValueAtTime(130+intens*70,t); o.frequency.exponentialRampToValueAtTime(42,t+0.1);
-    const g=this._ctx.createGain(); g.gain.setValueAtTime(0.32*intens+0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.14);
-    o.connect(g); g.connect(this._master); o.start(t); o.stop(t+0.17);
-    // Metal ring
-    const r=this._ctx.createOscillator(); r.type='triangle';
-    r.frequency.setValueAtTime(620+Math.random()*380,t);
-    const rg=this._ctx.createGain(); rg.gain.setValueAtTime(0.12*intens+0.04,t); rg.gain.exponentialRampToValueAtTime(0.001,t+0.22);
-    r.connect(rg); rg.connect(this._master); r.start(t); r.stop(t+0.25);
+  // Fire
+  fireBlast(){if(!this._ctx||!this._gate('fireBlast',200))return;this._osc('sawtooth',200,80,0.28,0.008,0,0.22,null);this._noise(0.22,0.003,0.02,0.18,600,2);}
+  fireHit(){if(!this._ctx||!this._gate('fireHit',80))return;this._noise(0.3,0.002,0.02,0.15,500,1.5);this._osc('sine',280,80,0.2,0.003,0,0.18,null);}
+  // Ice
+  iceShoot(){if(!this._ctx||!this._gate('iceShoot',150))return;this._osc('triangle',1800,1200,0.14,0.003,0,0.12,null);this._noise(0.08,0.001,0,0.05,5000,12);}
+  iceHit(){if(!this._ctx)return;this._osc('triangle',2200,400,0.18,0.002,0,0.16,null);this._noise(0.12,0.001,0,0.06,4000,8);}
+  // Collisions / death / start
+  collision(spd=50){
+    if(!this._ctx||!this._gate('col',70))return;const t=this._ctx.currentTime,intens=Math.min(1,spd/180);
+    const o=this._ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(130+intens*70,t);o.frequency.exponentialRampToValueAtTime(42,t+0.1);
+    const g=this._ctx.createGain();g.gain.setValueAtTime(0.32*intens+0.1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.14);o.connect(g);g.connect(this._master);o.start(t);o.stop(t+0.17);
+    const r=this._ctx.createOscillator();r.type='triangle';r.frequency.setValueAtTime(620+Math.random()*380,t);
+    const rg=this._ctx.createGain();rg.gain.setValueAtTime(0.12*intens+0.04,t);rg.gain.exponentialRampToValueAtTime(0.001,t+0.22);r.connect(rg);rg.connect(this._master);r.start(t);r.stop(t+0.25);
     this._noise(0.14*intens+0.04,0.001,0,0.07,1600,5);
   }
-
-  // ── Death / start / end ────────────────────────────────────────
-  baybladeKO() {
-    if (!this._ctx) return;
-    this._osc('sawtooth',720,32,0.32,0.005,0,1.25,null);
-    this._noise(0.52,0.004,0.28,0.62,null);
-    this._noise(0.26,0.002,0,0.13,3100,5);
-  }
-  battleStart() {
-    if (!this._ctx) return;
-    this._osc('sawtooth',85,660,0.34,0.04,0,0.42,null);
-    setTimeout(()=>{ if(!this._ctx)return; this._noise(0.42,0.003,0.07,0.28,null); this._osc('sine',230,105,0.32,0.003,0.14,0.32,null); },370);
-  }
-  winnerFanfare() {
-    if (!this._ctx) return;
-    [330,415,523,659].forEach((f,i)=>setTimeout(()=>{ this._osc('sine',f,null,0.22,0.01,0.12,0.22,null); this._osc('triangle',f*2,null,0.10,0.01,0.06,0.16,null); },i*135));
-  }
-
-  // ── Continuous loops (return handle with .stop()) ──────────────
-
-  // Per-blade spinning whirr — call once per blade, stop on death
-  createSpinLoop(spinRate) {
-    if (!this._ctx) return null;
-    try {
-      const baseFreq = 75 + spinRate * 9; // ~155-219 Hz
-      const osc = this._ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = baseFreq;
-      // Gentle tremolo for liveliness
-      const lfo=this._ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=9+Math.random()*5;
-      const lfoG=this._ctx.createGain(); lfoG.gain.value=0.28;
-      lfo.connect(lfoG); lfoG.connect(osc.frequency); // slight pitch wobble
-      // Bandpass to get airy whirr quality
-      const bp=this._ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=baseFreq*1.8; bp.Q.value=0.7;
-      const gainNode=this._ctx.createGain(); gainNode.gain.value=0;
-      osc.connect(bp); bp.connect(gainNode); gainNode.connect(this._master);
-      osc.start(); lfo.start();
-      // Fade in slowly
-      gainNode.gain.setValueAtTime(0,this._ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.038,this._ctx.currentTime+0.6);
-      return {
-        stop: ()=>{ try { const ct=this._ctx.currentTime; gainNode.gain.setValueAtTime(gainNode.gain.value,ct); gainNode.gain.exponentialRampToValueAtTime(0.001,ct+0.9); osc.stop(ct+1.0); lfo.stop(ct+1.0); } catch(e){} }
-      };
-    } catch(e) { return null; }
-  }
-
-  // Harpoon in-flight whirring buzz — start on fire, stop on hit/expire
-  createHarpoonWhirr() {
-    if (!this._ctx) return null;
-    try {
-      const t=this._ctx.currentTime;
-      const osc=this._ctx.createOscillator(); osc.type='sawtooth'; osc.frequency.value=780;
-      const lfo=this._ctx.createOscillator(); lfo.frequency.value=18;
-      const lfoG=this._ctx.createGain(); lfoG.gain.value=28;
-      lfo.connect(lfoG); lfoG.connect(osc.frequency);
-      const g=this._ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.065,t+0.07);
-      osc.connect(g); g.connect(this._master); osc.start(t); lfo.start(t);
-      return {
-        stop: ()=>{ try { const ct=this._ctx.currentTime; g.gain.setValueAtTime(g.gain.value,ct); g.gain.exponentialRampToValueAtTime(0.001,ct+0.1); osc.stop(ct+0.14); lfo.stop(ct+0.14); } catch(e){} }
-      };
-    } catch(e) { return null; }
+  baybladeKO(){if(!this._ctx)return;this._osc('sawtooth',720,32,0.32,0.005,0,1.25,null);this._noise(0.52,0.004,0.28,0.62,null);this._noise(0.26,0.002,0,0.13,3100,5);}
+  battleStart(){if(!this._ctx)return;this._osc('sawtooth',85,660,0.34,0.04,0,0.42,null);setTimeout(()=>{if(!this._ctx)return;this._noise(0.42,0.003,0.07,0.28,null);this._osc('sine',230,105,0.32,0.003,0.14,0.32,null);},370);}
+  winnerFanfare(){if(!this._ctx)return;[330,415,523,659].forEach((f,i)=>setTimeout(()=>{this._osc('sine',f,null,0.22,0.01,0.12,0.22,null);this._osc('triangle',f*2,null,0.10,0.01,0.06,0.16,null);},i*135));}
+  // Per-blade spin loop
+  createSpinLoop(spinRate){
+    if(!this._ctx)return null;
+    try{
+      const baseFreq=75+spinRate*9;
+      const osc=this._ctx.createOscillator();osc.type='sawtooth';osc.frequency.value=baseFreq;
+      const lfo=this._ctx.createOscillator();lfo.type='sine';lfo.frequency.value=9+Math.random()*5;
+      const lfoG=this._ctx.createGain();lfoG.gain.value=0.28;lfo.connect(lfoG);lfoG.connect(osc.frequency);
+      const bp=this._ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=baseFreq*1.8;bp.Q.value=0.7;
+      const gainNode=this._ctx.createGain();gainNode.gain.value=0;
+      osc.connect(bp);bp.connect(gainNode);gainNode.connect(this._master);osc.start();lfo.start();
+      gainNode.gain.setValueAtTime(0,this._ctx.currentTime);gainNode.gain.linearRampToValueAtTime(0.038,this._ctx.currentTime+0.6);
+      return{stop:()=>{try{const ct=this._ctx.currentTime;gainNode.gain.setValueAtTime(gainNode.gain.value,ct);gainNode.gain.exponentialRampToValueAtTime(0.001,ct+0.9);osc.stop(ct+1.0);lfo.stop(ct+1.0);}catch(e){}}};
+    }catch(e){return null;}
   }
 }
-const SFX = new AudioEngine();
+const SFX=new AudioEngine();
 
-/* ═══════════════════════════════════════════════════
-   PROJECTILE BASE
-═══════════════════════════════════════════════════ */
-class Projectile {
-  constructor(pos, vel, owner) { this.pos=pos.clone(); this.vel=vel.clone(); this.owner=owner; this.active=true; this.age=0; }
-  update(_dt,_arena,_targets,_ps) {}
-  render(_ctx) {}
-  onDeactivate() {}
+/* ── PROJECTILE BASE ────────────────────────────────────── */
+class Projectile{
+  constructor(pos,vel,owner){this.pos=pos.clone();this.vel=vel.clone();this.owner=owner;this.active=true;this.age=0;}
+  update(){}render(){}onDeactivate(){}
 }
 
-/* ═══════════════════════════════════════════════════
-   HARPOON PROJECTILE
-   Random direction → bounces → hooks target →
-   retracts along exact recorded path → SLAM
-═══════════════════════════════════════════════════ */
-class HarpoonProjectile extends Projectile {
-  constructor(pos, vel, owner, cfg = {}) {
-    super(pos, vel, owner);
-    this.maxBounces      = cfg.maxBounces   ?? 14;
-    this.maxAge          = cfg.maxAge       ?? 18;
-    this.hitDamage       = cfg.hitDamage    ?? 15;
-    this.slamDamage      = cfg.slamDamage   ?? 40;
-    this.retractSpeed    = cfg.retractSpeed ?? 370;
-    this.bounces         = 0;
-    this.path            = [pos.clone()]; // path[0] always = owner pos
-    this.attached        = null;
-    this.retracting      = false;
-    this.retractIdx      = 0;
-    this.retractPos      = null;
-    this._retractSounded = false;
+/* ── HARPOON PROJECTILE ─────────────────────────────────── */
+class HarpoonProjectile extends Projectile{
+  constructor(pos,vel,owner,cfg={}){
+    super(pos,vel,owner);
+    this.maxBounces=cfg.maxBounces??14;this.maxAge=cfg.maxAge??18;this.hitDamage=cfg.hitDamage??15;this.slamDamage=cfg.slamDamage??40;this.retractSpeed=cfg.retractSpeed??370;this.bounces=0;
+    this.path=[pos.clone()];this.attached=null;this.retracting=false;this.retractIdx=0;this.retractPos=null;this._retractSounded=false;
   }
-
-  update(dt, arena, targets, ps) {
-    this.age++;
-    this.age = this.age; // suppress unused
-    this.age -= 1;
-    this.age += dt;
-    this.path[0] = this.owner.pos.clone();
-    if (!this.retracting && this.age > this.maxAge) { this.active = false; return; }
-    if (this.retracting) this._retract(dt, ps);
-    else                 this._fly(dt, arena, targets, ps);
+  update(dt,arena,targets,ps){
+    this.age+=dt;this.path[0]=this.owner.pos.clone();
+    if(!this.retracting&&this.age>this.maxAge){this.active=false;return;}
+    if(this.retracting)this._retract(dt,ps);else this._fly(dt,arena,targets,ps);
   }
-
-  _fly(dt, arena, targets, ps) {
-    this.pos = this.pos.add(this.vel.scale(dt));
-    const fromCenter = this.pos.sub(arena.center);
-    if (fromCenter.len() >= arena.radius - 5) {
-      const n  = fromCenter.normalize();
-      this.vel = this.vel.reflect(n);
-      this.pos = arena.center.add(n.scale(arena.radius - 6));
-      this.path.push(this.pos.clone());
-      this.bounces++;
-      SFX.harpoonBounce();
-      ps.emit(7, { pos:this.pos, color:['#88aaff','#ccddff','#ffffff'], speed:75, minSize:1, maxSize:3, minLife:0.15, maxLife:0.4 });
-      if (this.bounces > this.maxBounces) { this.active = false; return; }
+  _fly(dt,arena,targets,ps){
+    this.pos=this.pos.add(this.vel.scale(dt));
+    const fc=this.pos.sub(arena.center);
+    if(fc.len()>=arena.radius-5){
+      const n=fc.normalize();this.vel=this.vel.reflect(n);this.pos=arena.center.add(n.scale(arena.radius-6));this.path.push(this.pos.clone());this.bounces++;SFX.harpoonBounce();
+      ps.emit(7,{pos:this.pos,color:['#88aaff','#ccddff','#ffffff'],speed:75,minSize:1,maxSize:3,minLife:0.15,maxLife:0.4});
+      if(this.bounces>this.maxBounces){this.active=false;return;}
     }
-    for (const t of targets) {
-      if (t === this.owner || !t.alive || t.caughtBy) continue;
-      if (this.pos.distTo(t.pos) < t.radius + 8) {
-        t.takeDamage(this.hitDamage, 'harpoon', this.owner);
-        SFX.harpoonHit();
-        this.attached = t; this.retracting = true; t.caughtBy = this;
-        this.path.push(this.pos.clone());
-        this.retractIdx = this.path.length - 1;
-        this.retractPos = this.pos.clone();
-        ps.emit(22, { pos:t.pos, color:['#88aaff','#ffffff','#ffdd88'], speed:210, minSize:2, maxSize:6, minLife:0.25, maxLife:0.65 });
-        break;
+    for(const t of targets){
+      if(t===this.owner||!t.alive||t.caughtBy)continue;
+      if(this.pos.distTo(t.pos)<t.radius+8){
+        t.takeDamage(this.hitDamage,'harpoon',this.owner);SFX.harpoonHit();
+        this.attached=t;this.retracting=true;t.caughtBy=this;this.path.push(this.pos.clone());this.retractIdx=this.path.length-1;this.retractPos=this.pos.clone();
+        ps.emit(22,{pos:t.pos,color:['#88aaff','#ffffff','#ffdd88'],speed:210,minSize:2,maxSize:6,minLife:0.25,maxLife:0.65});break;
       }
     }
   }
-
-  _retract(dt, ps) {
-    if (!this.attached || !this.attached.alive) {
-      if (this.attached) this.attached.caughtBy = null;
-      this.attached = null; this.active = false; return;
+  _retract(dt,ps){
+    if(!this.attached||!this.attached.alive){if(this.attached)this.attached.caughtBy=null;this.attached=null;this.active=false;return;}
+    if(!this._retractSounded){SFX.harpoonRetract();this._retractSounded=true;}
+    if(this.retractIdx<=0){
+      SFX.harpoonSlam();this.attached.takeDamage(this.slamDamage,'slam',this.owner);
+      this.attached.vel=this.retractPos.sub(this.owner.pos).normalize().scale(-200);this.attached.caughtBy=null;
+      ps.emit(45,{pos:this.owner.pos,color:['#ffaa33','#ff6633','#ffffff','#ffee77'],speed:340,minSize:3,maxSize:11,minLife:0.35,maxLife:1.1});
+      this.attached=null;this.active=false;return;
     }
-    if (!this._retractSounded) { SFX.harpoonRetract(); this._retractSounded = true; }
-    if (this.retractIdx <= 0) {
-      SFX.harpoonSlam();
-      this.attached.takeDamage(this.slamDamage, 'slam', this.owner);
-      this.attached.vel      = this.retractPos.sub(this.owner.pos).normalize().scale(-200);
-      this.attached.caughtBy = null;
-      ps.emit(45, { pos:this.owner.pos, color:['#ffaa33','#ff6633','#ffffff','#ffee77'], speed:340, minSize:3, maxSize:11, minLife:0.35, maxLife:1.1 });
-      this.attached = null; this.active = false; return;
-    }
-    const nextWP = this.path[this.retractIdx - 1];
-    const toNext = nextWP.sub(this.retractPos);
-    const dist   = toNext.len(), move = this.retractSpeed * dt;
-    if (move >= dist) { this.retractPos = nextWP.clone(); this.retractIdx--; }
-    else               { this.retractPos = this.retractPos.add(toNext.normalize().scale(move)); }
-    this.attached.pos = this.retractPos.clone();
+    const nw=this.path[this.retractIdx-1],tn=nw.sub(this.retractPos),dist=tn.len(),move=this.retractSpeed*dt;
+    if(move>=dist){this.retractPos=nw.clone();this.retractIdx--;}else{this.retractPos=this.retractPos.add(tn.normalize().scale(move));}
+    this.attached.pos=this.retractPos.clone();
   }
-
-  onDeactivate() {
-    if (this._whirrHandle) { this._whirrHandle.stop(); this._whirrHandle = null; }
-    if (this.attached) { this.attached.caughtBy = null; this.attached = null; }
+  onDeactivate(){if(this.attached){this.attached.caughtBy=null;this.attached=null;}}
+  _drawRope(ctx,pts){
+    if(pts.length<2)return;ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeStyle='#3355aa88';ctx.lineWidth=6;ctx.globalAlpha=0.35;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();
+    ctx.strokeStyle='#aaccff';ctx.lineWidth=2;ctx.setLineDash([9,5]);ctx.globalAlpha=0.9;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();ctx.setLineDash([]);
+    ctx.globalAlpha=0.7;ctx.fillStyle='#88aaff';for(let i=1;i<pts.length-1;i++){ctx.beginPath();ctx.arc(pts[i].x,pts[i].y,4,0,Math.PI*2);ctx.fill();}ctx.restore();
   }
-
-  _drawRope(ctx, points) {
-    if (points.length < 2) return;
-    ctx.save();
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.strokeStyle = '#3355aa88'; ctx.lineWidth = 6; ctx.globalAlpha = 0.35;
-    ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-    ctx.stroke();
-    ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 2; ctx.setLineDash([9,5]); ctx.globalAlpha = 0.9;
-    ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 0.7; ctx.fillStyle = '#88aaff';
-    for (let i = 1; i < points.length - 1; i++) { ctx.beginPath(); ctx.arc(points[i].x, points[i].y, 4, 0, Math.PI*2); ctx.fill(); }
-    ctx.restore();
-  }
-
-  render(ctx) {
-    if (!this.active) return;
-    if (this.retracting && this.attached && this.retractPos) {
-      this._drawRope(ctx, [...this.path.slice(0, this.retractIdx), this.retractPos.clone()]); return;
-    }
-    this._drawRope(ctx, [...this.path, this.pos.clone()]);
-    const g = ctx.createRadialGradient(this.pos.x,this.pos.y,0,this.pos.x,this.pos.y,13);
-    g.addColorStop(0,'#aaccff'); g.addColorStop(1,'transparent');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,13,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,4,0,Math.PI*2); ctx.fill();
+  render(ctx){
+    if(!this.active)return;
+    if(this.retracting&&this.attached&&this.retractPos){this._drawRope(ctx,[...this.path.slice(0,this.retractIdx),this.retractPos.clone()]);return;}
+    this._drawRope(ctx,[...this.path,this.pos.clone()]);
+    const g=ctx.createRadialGradient(this.pos.x,this.pos.y,0,this.pos.x,this.pos.y,13);g.addColorStop(0,'#aaccff');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(this.pos.x,this.pos.y,13,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(this.pos.x,this.pos.y,4,0,Math.PI*2);ctx.fill();
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   MINE  (stationary, arms after delay, AoE on trigger)
-═══════════════════════════════════════════════════ */
-class Mine extends Projectile {
-  constructor(pos, owner, cfg = {}) {
-    super(pos, new Vec2(), owner);
-    this.radius   = 14;
-    this.triggerR = cfg.mineTriggerR ?? 42;
-    this.damage   = cfg.mineDamage   ?? 65;
-    this.armDelay = cfg.mineArmDelay ?? 0.35;
-    this.armed    = false;
-    this.phase    = Math.random() * Math.PI * 2;
-    this.maxAge   = 35;
+/* ── MINE ───────────────────────────────────────────────── */
+class Mine extends Projectile{
+  constructor(pos,owner,cfg={}){super(pos,new Vec2(),owner);this.radius=14;this.triggerR=cfg.mineTriggerR??42;this.damage=cfg.mineDamage??65;this.armDelay=cfg.mineArmDelay??0.35;this.armed=false;this.phase=Math.random()*Math.PI*2;this.maxAge=35;}
+  update(dt,_arena,targets,ps){
+    this.age+=dt;this.phase+=dt*4;if(this.age>this.maxAge){this.active=false;return;}
+    if(!this.armed&&this.age>=this.armDelay){this.armed=true;SFX.mineArmed();}
+    if(!this.armed)return;
+    if(rng.chance(dt*2.2))SFX.mineTick();
+    for(const t of targets){if(t===this.owner||!t.alive)continue;if(this.pos.distTo(t.pos)<this.triggerR+t.radius){this._explode(targets,ps);return;}}
   }
-  update(dt, _arena, targets, ps) {
-    this.age += dt; this.phase += dt * 4;
-    if (this.age > this.maxAge) { this.active = false; return; }
-    if (!this.armed && this.age >= this.armDelay) { this.armed = true; SFX.mineArmed(); }
-    if (!this.armed) return;
-    if (rng.chance(dt * 2.2)) SFX.mineTick(); // ~2 ticks/s while armed
-    for (const t of targets) {
-      if (t === this.owner || !t.alive) continue;
-      if (this.pos.distTo(t.pos) < this.triggerR + t.radius) { this._explode(targets, ps); return; }
-    }
-  }
-  _explode(targets, ps) {
+  _explode(targets,ps){
     SFX.mineExplode();
-    for (const t of targets) {
-      if (t === this.owner || !t.alive) continue;
-      const d = this.pos.distTo(t.pos), aoeR = this.triggerR + t.radius + 35;
-      if (d >= aoeR) continue;
-      const f = Math.max(0.25, 1 - d / (this.triggerR + 55));
-      t.takeDamage(this.damage * f, 'mine', this.owner);
-      t.vel = t.vel.add(t.pos.sub(this.pos).normalize().scale(380 * f));
-    }
-    ps.emit(60, { pos:this.pos, color:['#ff6600','#ff3300','#ffaa44','#ffee88','#ffffff','#ff8800'], speed:310, minSize:3, maxSize:13, minLife:0.45, maxLife:1.4 });
-    ps.emit(22, { pos:this.pos, color:['#ffdd88','#ffffff'], speed:90, minSize:6, maxSize:16, minLife:0.12, maxLife:0.3, alpha:0.65 });
-    this.active = false;
+    for(const t of targets){if(t===this.owner||!t.alive)continue;const d=this.pos.distTo(t.pos),aoeR=this.triggerR+t.radius+35;if(d>=aoeR)continue;const f=Math.max(0.25,1-d/(this.triggerR+55));t.takeDamage(this.damage*f,'mine',this.owner);t.vel=t.vel.add(t.pos.sub(this.pos).normalize().scale(380*f));}
+    ps.emit(60,{pos:this.pos,color:['#ff6600','#ff3300','#ffaa44','#ffee88','#ffffff','#ff8800'],speed:310,minSize:3,maxSize:13,minLife:0.45,maxLife:1.4});
+    ps.emit(22,{pos:this.pos,color:['#ffdd88','#ffffff'],speed:90,minSize:6,maxSize:16,minLife:0.12,maxLife:0.3,alpha:0.65});this.active=false;
   }
-  onDeactivate() { if (this._abilityRef) this._abilityRef._activeMineCount = Math.max(0, this._abilityRef._activeMineCount - 1); }
-  render(ctx) {
-    if (!this.active) return;
-    const {x,y} = this.pos, pulse = 0.85 + 0.15*Math.sin(this.phase), alpha = this.armed ? 1 : 0.4+0.3*Math.sin(this.phase*2.5);
-    ctx.save(); ctx.globalAlpha = alpha;
-    if (this.armed) {
-      ctx.strokeStyle='#ff660066'; ctx.lineWidth=1.5; ctx.setLineDash([4,5]);
-      ctx.globalAlpha = alpha*(0.25+0.25*Math.sin(this.phase*1.6));
-      ctx.beginPath(); ctx.arc(x,y,this.triggerR,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+  onDeactivate(){if(this._abilityRef)this._abilityRef._activeMineCount=Math.max(0,this._abilityRef._activeMineCount-1);}
+  render(ctx){
+    if(!this.active)return;const{x,y}=this.pos,pulse=0.85+0.15*Math.sin(this.phase),alpha=this.armed?1:0.4+0.3*Math.sin(this.phase*2.5);ctx.save();ctx.globalAlpha=alpha;
+    if(this.armed){ctx.strokeStyle='#ff660066';ctx.lineWidth=1.5;ctx.setLineDash([4,5]);ctx.globalAlpha=alpha*(0.25+0.25*Math.sin(this.phase*1.6));ctx.beginPath();ctx.arc(x,y,this.triggerR,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+    ctx.globalAlpha=alpha*0.5;const glow=ctx.createRadialGradient(x,y,0,x,y,this.radius*2.8);glow.addColorStop(0,'#ff6600bb');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,this.radius*2.8,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=alpha;ctx.fillStyle=this.armed?'#882200':'#554400';ctx.beginPath();for(let i=0;i<=8;i++){const a=(i/8)*Math.PI*2,r=i%2===0?this.radius*pulse:this.radius*0.52,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.closePath();ctx.fill();
+    ctx.fillStyle=this.armed?'#ff6600':'#776600';ctx.beginPath();ctx.arc(x,y,this.radius*0.45*pulse,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffee88';ctx.beginPath();ctx.arc(x,y,this.radius*0.16,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+}
+
+/* ── BLADE STORM RING ───────────────────────────────────── */
+class StormRing extends Projectile{
+  constructor(pos,owner,cfg={}){super(pos,new Vec2(),owner);this.maxRadius=cfg.range??130;this.currentR=owner.radius;this.expandRate=290;this.damage=cfg.damage??28;this.hit=new Set();this.maxAge=this.maxRadius/this.expandRate+0.05;}
+  update(dt,_arena,targets,ps){
+    this.age+=dt;this.currentR+=this.expandRate*dt;
+    for(const t of targets){if(t===this.owner||!t.alive||this.hit.has(t))continue;const d=t.pos.distTo(this.pos);if(d<=this.currentR+t.radius&&d>=this.currentR-t.radius-10){t.takeDamage(this.damage,'storm',this.owner);this.hit.add(t);ps.emit(14,{pos:t.pos,color:['#ffaa00','#ff6600','#ffee44'],speed:180,minSize:2,maxSize:6,minLife:0.2,maxLife:0.55});}}
+    if(this.age>=this.maxAge)this.active=false;
+  }
+  render(ctx){if(!this.active)return;ctx.save();ctx.globalAlpha=(1-this.age/this.maxAge)*0.75;ctx.strokeStyle='#ffaa00';ctx.lineWidth=5;ctx.shadowColor='#ffaa00';ctx.shadowBlur=14;ctx.beginPath();ctx.arc(this.pos.x,this.pos.y,this.currentR,0,Math.PI*2);ctx.stroke();ctx.restore();}
+}
+
+/* ── FIREBALL ───────────────────────────────────────────── */
+class FireBall extends Projectile{
+  constructor(pos,vel,owner,cfg={}){
+    super(pos,vel,owner);this.damage=cfg.fireDamage??12;this.burnDps=cfg.fireBurnDps??5;this.burnDur=cfg.fireBurnDur??3.5;this.maxBounces=1;this.bounces=0;this.maxAge=4.5;this.phase=Math.random()*Math.PI*2;this.r=8;
+  }
+  update(dt,arena,targets,ps){
+    this.age+=dt;this.phase+=dt*12;if(this.age>this.maxAge){this.active=false;return;}
+    this.pos=this.pos.add(this.vel.scale(dt));
+    // Fire particle trail
+    if(rng.chance(dt*30))ps.emit(3,{pos:this.pos,color:['#ff4400','#ff8800','#ffcc22','#ff2200'],speed:28+Math.random()*28,minSize:3,maxSize:7,minLife:0.12,maxLife:0.45});
+    // Wall bounce
+    const fc=this.pos.sub(arena.center);
+    if(fc.len()>=arena.radius-5){
+      if(this.bounces<this.maxBounces){const n=fc.normalize();this.vel=this.vel.reflect(n);this.pos=arena.center.add(n.scale(arena.radius-6));this.bounces++;ps.emit(8,{pos:this.pos,color:['#ff6600','#ffaa00','#ffffff'],speed:80,minSize:2,maxSize:5,minLife:0.2,maxLife:0.5});}
+      else{this.active=false;return;}
     }
-    ctx.globalAlpha = alpha*0.5;
-    const glow = ctx.createRadialGradient(x,y,0,x,y,this.radius*2.8);
-    glow.addColorStop(0,'#ff6600bb'); glow.addColorStop(1,'transparent');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(x,y,this.radius*2.8,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha = alpha; ctx.fillStyle = this.armed ? '#882200' : '#554400';
-    ctx.beginPath();
-    for (let i=0;i<=8;i++) { const a=(i/8)*Math.PI*2,r=i%2===0?this.radius*pulse:this.radius*0.52,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); }
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = this.armed ? '#ff6600' : '#776600';
-    ctx.beginPath(); ctx.arc(x,y,this.radius*0.45*pulse,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#ffee88'; ctx.beginPath(); ctx.arc(x,y,this.radius*0.16,0,Math.PI*2); ctx.fill();
+    for(const t of targets){
+      if(t===this.owner||!t.alive)continue;
+      if(this.pos.distTo(t.pos)<t.radius+this.r){
+        t.takeDamage(this.damage,'fire',this.owner);t.addEffect(new BurningEffect(this.burnDps,this.burnDur,this.owner));
+        SFX.fireHit();ps.emit(25,{pos:t.pos,color:['#ff4400','#ff8800','#ffcc22','#ffffff'],speed:190,minSize:3,maxSize:8,minLife:0.3,maxLife:0.7});this.active=false;break;
+      }
+    }
+  }
+  render(ctx){
+    if(!this.active)return;const{x,y}=this.pos,pulse=0.85+0.15*Math.sin(this.phase);
+    const g=ctx.createRadialGradient(x,y,0,x,y,this.r*3.5);g.addColorStop(0,'#ff880099');g.addColorStop(0.5,'#ff440044');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,this.r*3.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffcc44';ctx.beginPath();ctx.arc(x,y,this.r*pulse,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(x,y,this.r*0.38*pulse,0,Math.PI*2);ctx.fill();
+  }
+}
+
+/* ── ICE SHARD ──────────────────────────────────────────── */
+class IceShard extends Projectile{
+  constructor(pos,vel,owner,cfg={}){
+    super(pos,vel,owner);this.damage=cfg.iceDamage??14;this.slowDur=cfg.iceSlowDur??2.8;this.slowFactor=cfg.iceSlowFactor??0.3;this.maxAge=3.2;this.len=18;
+  }
+  update(dt,arena,targets,ps){
+    this.age+=dt;if(this.age>this.maxAge||this.pos.distTo(arena.center)>arena.radius-5){this.active=false;return;}
+    this.pos=this.pos.add(this.vel.scale(dt));
+    if(rng.chance(dt*18))ps.emit(2,{pos:this.pos,color:['#aaeeff','#ffffff','#66ccff'],speed:18,minSize:1,maxSize:3.5,minLife:0.18,maxLife:0.45,alpha:0.8});
+    for(const t of targets){
+      if(t===this.owner||!t.alive)continue;
+      if(this.pos.distTo(t.pos)<t.radius+7){
+        t.takeDamage(this.damage,'ice',this.owner);t.addEffect(new FrozenEffect(this.slowDur,this.slowFactor,this.owner));
+        SFX.iceHit();ps.emit(20,{pos:t.pos,color:['#aaeeff','#ffffff','#88ccff'],speed:155,minSize:2,maxSize:6,minLife:0.3,maxLife:0.7});this.active=false;break;
+      }
+    }
+  }
+  render(ctx){
+    if(!this.active)return;
+    const dir=this.vel.normalize(),angle=Math.atan2(dir.y,dir.x);
+    ctx.save();ctx.translate(this.pos.x,this.pos.y);ctx.rotate(angle);
+    const g=ctx.createRadialGradient(0,0,0,0,0,this.len*1.2);g.addColorStop(0,'#aaeeffcc');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,this.len*1.2,0,Math.PI*2);ctx.fill();
+    // Crystal shape
+    ctx.fillStyle='#ddeeff';ctx.beginPath();ctx.moveTo(this.len,0);ctx.lineTo(5,-5);ctx.lineTo(-this.len*0.3,0);ctx.lineTo(5,5);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.globalAlpha=0.55;ctx.beginPath();ctx.moveTo(this.len*0.75,0);ctx.lineTo(3,-2.5);ctx.lineTo(this.len*0.2,0);ctx.lineTo(3,2.5);ctx.closePath();ctx.fill();
+    ctx.globalAlpha=1;ctx.restore();
+  }
+}
+
+/* ── STATUS EFFECTS ─────────────────────────────────────── */
+class BurningEffect{
+  constructor(dps,duration,source){this.type='fire';this.dps=dps;this.duration=duration;this.remaining=duration;this.source=source;this.active=true;this.phase=Math.random()*Math.PI*2;}
+  update(dt,blade,ps){
+    this.remaining-=dt;this.phase+=dt*8;
+    if(this.remaining<=0){this.active=false;return;}
+    blade.takeDamage(this.dps*dt,'fire',this.source);
+    if(rng.chance(dt*7))ps.emit(2,{pos:blade.pos.add(Vec2.random().scale(blade.radius*0.7)),color:['#ff4400','#ff8800','#ffcc22'],speed:50,minSize:2,maxSize:5,minLife:0.2,maxLife:0.55});
+  }
+  renderOnBlade(ctx,blade){
+    const t=this.remaining/this.duration,pulse=0.65+0.35*Math.sin(this.phase);
+    const{x,y}=blade.pos,g=ctx.createRadialGradient(x,y,0,x,y,blade.radius*2.6);
+    g.addColorStop(0,`rgba(255,80,0,${0.42*t*pulse})`);g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,blade.radius*2.6,0,Math.PI*2);ctx.fill();
+  }
+}
+
+class FrozenEffect{
+  constructor(duration,slowFactor,source){
+    this.type='ice';this.duration=duration;this.remaining=duration;this.slowFactor=slowFactor;this.source=source;this.active=true;this.phase=Math.random()*Math.PI*2;
+    this.crystals=Array.from({length:7},(_,i)=>({angle:(i/7)*Math.PI*2+Math.random()*0.5,orbitR:14+Math.random()*10,size:3+Math.random()*3}));
+  }
+  get speedMult(){return this.slowFactor;}
+  update(dt,blade,ps){
+    this.remaining-=dt;this.phase+=dt*2.5;
+    if(this.remaining<=0){this.active=false;return;}
+    if(rng.chance(dt*2.5))ps.emit(1,{pos:blade.pos,color:['#aaeeff','#ffffff','#88ccff'],speed:22,minSize:1,maxSize:3,minLife:0.3,maxLife:0.7,alpha:0.65});
+  }
+  renderOnBlade(ctx,blade){
+    const t=this.remaining/this.duration;
+    const{x,y}=blade.pos;
+    // Icy blue glow
+    const g=ctx.createRadialGradient(x,y,0,x,y,blade.radius*2.4);g.addColorStop(0,`rgba(80,200,255,${0.45*t})`);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,blade.radius*2.4,0,Math.PI*2);ctx.fill();
+    // Orbiting ice crystals
+    ctx.save();
+    this.crystals.forEach(c=>{
+      const a=c.angle+this.phase,cx=x+Math.cos(a)*(blade.radius+c.orbitR),cy=y+Math.sin(a)*(blade.radius+c.orbitR);
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(a+Math.PI/4);ctx.globalAlpha=0.8*t;
+      ctx.fillStyle='#88ddff';ctx.beginPath();ctx.moveTo(0,-c.size);ctx.lineTo(c.size*0.55,0);ctx.lineTo(0,c.size);ctx.lineTo(-c.size*0.55,0);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=0.8;ctx.globalAlpha=0.5*t;ctx.stroke();ctx.restore();
+    });
     ctx.restore();
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   BLADE STORM RING
-═══════════════════════════════════════════════════ */
-class StormRing extends Projectile {
-  constructor(pos, owner, cfg={}) {
-    super(pos, new Vec2(), owner);
-    this.maxRadius=cfg.range??130; this.currentR=owner.radius; this.expandRate=290;
-    this.damage=cfg.damage??28; this.hit=new Set(); this.maxAge=this.maxRadius/this.expandRate+0.05;
-  }
-  update(dt, _arena, targets, ps) {
-    this.age+=dt; this.currentR+=this.expandRate*dt;
-    for (const t of targets) {
-      if (t===this.owner||!t.alive||this.hit.has(t)) continue;
-      const d=t.pos.distTo(this.pos);
-      if (d<=this.currentR+t.radius&&d>=this.currentR-t.radius-10) {
-        t.takeDamage(this.damage,'storm',this.owner); this.hit.add(t);
-        ps.emit(14,{pos:t.pos,color:['#ffaa00','#ff6600','#ffee44'],speed:180,minSize:2,maxSize:6,minLife:0.2,maxLife:0.55});
-      }
-    }
-    if (this.age>=this.maxAge) this.active=false;
-  }
-  render(ctx) {
-    if (!this.active) return;
-    ctx.save(); ctx.globalAlpha=(1-this.age/this.maxAge)*0.75; ctx.strokeStyle='#ffaa00'; ctx.lineWidth=5; ctx.shadowColor='#ffaa00'; ctx.shadowBlur=14;
-    ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,this.currentR,0,Math.PI*2); ctx.stroke(); ctx.restore();
+/* ── PARASITE VISUAL ────────────────────────────────────── */
+class Parasite{
+  constructor(host,idx){this.orbitAngle=Math.random()*Math.PI*2;this.orbitRadius=host.radius+9+(idx%4)*5;this.orbitSpeed=(2.5+Math.random()*2)*(Math.random()<0.5?1:-1);this.size=3+Math.random()*2;this.phase=Math.random()*Math.PI*2;}
+  update(dt){this.orbitAngle+=this.orbitSpeed*dt;this.phase+=dt*5;}
+  getPos(host){return host.pos.add(Vec2.fromAngle(this.orbitAngle).scale(this.orbitRadius));}
+  render(ctx,host){
+    const pos=this.getPos(host),pulse=0.65+0.35*Math.sin(this.phase);
+    ctx.save();ctx.globalAlpha=0.22;ctx.strokeStyle='#44ff99';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(host.pos.x,host.pos.y);ctx.lineTo(pos.x,pos.y);ctx.stroke();ctx.restore();
+    const g=ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,this.size*pulse*4);g.addColorStop(0,'#33ff88bb');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(pos.x,pos.y,this.size*pulse*4,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=pulse;ctx.fillStyle='#33ff88';ctx.beginPath();ctx.arc(pos.x,pos.y,this.size*pulse,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   PARASITE (orbiting visual)
-═══════════════════════════════════════════════════ */
-class Parasite {
-  constructor(host, idx) {
-    this.orbitAngle=(Math.random()*Math.PI*2); this.orbitRadius=host.radius+9+(idx%4)*5;
-    this.orbitSpeed=(2.5+Math.random()*2)*(Math.random()<0.5?1:-1); this.size=3+Math.random()*2; this.phase=Math.random()*Math.PI*2;
-  }
-  update(dt) { this.orbitAngle+=this.orbitSpeed*dt; this.phase+=dt*5; }
-  getPos(host) { return host.pos.add(Vec2.fromAngle(this.orbitAngle).scale(this.orbitRadius)); }
-  render(ctx, host) {
-    const pos=this.getPos(host), pulse=0.65+0.35*Math.sin(this.phase);
-    ctx.save(); ctx.globalAlpha=0.22; ctx.strokeStyle='#44ff99'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(host.pos.x,host.pos.y); ctx.lineTo(pos.x,pos.y); ctx.stroke(); ctx.restore();
-    const g=ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,this.size*pulse*4);
-    g.addColorStop(0,'#33ff88bb'); g.addColorStop(1,'transparent');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pos.x,pos.y,this.size*pulse*4,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=pulse; ctx.fillStyle='#33ff88';
-    ctx.beginPath(); ctx.arc(pos.x,pos.y,this.size*pulse,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-  }
+/* ── ABILITY BASE ───────────────────────────────────────── */
+class Ability{
+  constructor(cfg){this.name=cfg.name??'?';this.description=cfg.description??'';this.color=cfg.color??'#8888ff';this.icon=cfg.icon??'?';this.cooldown=cfg.cooldown??3;this.behaviorType=cfg.behaviorType??'standard';this.cdTimer=0;this.owner=null;this._cfg=cfg;}
+  attachTo(b){this.owner=b;}
+  canActivate(){return this.cdTimer<=0;}
+  get cdFraction(){return Math.max(0,Math.min(1,this.cdTimer/this.cooldown));}
+  update(dt){if(this.cdTimer>0)this.cdTimer-=dt;}
+  tryActivate(){}
+  onCollision(){}
+  renderOnOwner(){}
 }
 
-/* ═══════════════════════════════════════════════════
-   ABILITY BASE
-═══════════════════════════════════════════════════ */
-class Ability {
-  constructor(cfg) {
-    this.name=cfg.name??'Unknown'; this.description=cfg.description??''; this.color=cfg.color??'#8888ff';
-    this.icon=cfg.icon??'?'; this.cooldown=cfg.cooldown??3; this.behaviorType=cfg.behaviorType??'standard';
-    this.cdTimer=0; this.owner=null; this._cfg=cfg;
-  }
-  attachTo(b)     { this.owner=b; }
-  canActivate()   { return this.cdTimer<=0; }
-  get cdFraction(){ return Math.max(0,Math.min(1,this.cdTimer/this.cooldown)); }
-  update(dt)      { if(this.cdTimer>0)this.cdTimer-=dt; }
-  tryActivate(_targets,_projectiles,_arena,_ps) {}
-  onCollision(_other,_ps) {}
-}
-
-/* ═══════════════════════════════════════════════════
-   HARPOON ABILITY
-═══════════════════════════════════════════════════ */
-class HarpoonAbility extends Ability {
-  constructor(cfg={}) {
-    super({ name:'Harpoon',icon:'⚓',color:'#4488ff',
-      description:'Fires a harpoon in a random direction — bounces until it hooks someone, then retracts along the exact path.',
-      cooldown:cfg.cooldown??4.5, behaviorType:'ranged', ...cfg });
-    this.projectileSpeed=cfg.projectileSpeed??500; this.hasLive=false;
-  }
-  tryActivate(targets, projectiles, _arena, _ps) {
-    if (!this.canActivate()||this.hasLive) return;
-    if (!targets.some(t=>t!==this.owner&&t.alive)) return;
-    SFX.harpoonFire();
-    const dir=Vec2.fromAngle(Math.random()*Math.PI*2);
+/* ── HARPOON ────────────────────────────────────────────── */
+class HarpoonAbility extends Ability{
+  constructor(cfg={}){super({name:'Harpoon',icon:'⚓',color:'#4488ff',description:'Random-direction bouncing harpoon — hooks & drags along its exact bounce path.',cooldown:cfg.cooldown??4.5,behaviorType:'ranged',...cfg});this.projectileSpeed=cfg.projectileSpeed??500;this.hasLive=false;}
+  tryActivate(targets,projectiles){
+    if(!this.canActivate()||this.hasLive)return;if(!targets.some(t=>t!==this.owner&&t.alive))return;
+    SFX.harpoonFire();const dir=Vec2.fromAngle(Math.random()*Math.PI*2);
     const p=new HarpoonProjectile(this.owner.pos.clone(),dir.scale(this.projectileSpeed),this.owner,this._cfg);
-    p._whirrHandle=SFX.createHarpoonWhirr();
-    p._abilityRef=this; projectiles.push(p); this.cdTimer=this.cooldown; this.hasLive=true;
+    p._abilityRef=this;projectiles.push(p);this.cdTimer=this.cooldown;this.hasLive=true;
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   PARASITE ABILITY
-═══════════════════════════════════════════════════ */
-class ParasiteAbility extends Ability {
-  constructor(cfg={}) {
-    super({ name:'Parasite',icon:'🦠',color:'#33ff88',
-      description:'Each collision infects the target with a permanent parasite that stacks poison damage.',
-      cooldown:cfg.cooldown??0.7, behaviorType:'tactical', ...cfg });
-    this.dpsPerParasite=cfg.dpsPerParasite??2.5; this.maxParasites=cfg.maxParasites??9;
-  }
-  tryActivate() {}
-  onCollision(other, ps) {
-    if (!this.canActivate()||other.parasites.length>=this.maxParasites) return;
-    other.parasites.push(new Parasite(other,other.parasites.length));
-    other.poisonDPS=other.parasites.length*this.dpsPerParasite;
-    this.cdTimer=this.cooldown; SFX.parasiteInfect();
+/* ── PARASITE ───────────────────────────────────────────── */
+class ParasiteAbility extends Ability{
+  constructor(cfg={}){super({name:'Parasite',icon:'🦠',color:'#33ff88',description:'Contact infection — stacking permanent poison per hit.',cooldown:cfg.cooldown??0.7,behaviorType:'tactical',...cfg});this.dpsPerParasite=cfg.dpsPerParasite??2.5;this.maxParasites=cfg.maxParasites??9;}
+  tryActivate(){}
+  onCollision(other,ps){
+    if(!this.canActivate()||other.parasites.length>=this.maxParasites)return;
+    other.parasites.push(new Parasite(other,other.parasites.length));other.poisonDPS=other.parasites.length*this.dpsPerParasite;this.cdTimer=this.cooldown;SFX.parasiteInfect();
     ps?.emit(10,{pos:other.pos,color:['#33ff88','#88ffbb'],speed:110,minSize:2,maxSize:4,minLife:0.25,maxLife:0.55});
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   BLADE STORM ABILITY
-═══════════════════════════════════════════════════ */
-class BladeStormAbility extends Ability {
-  constructor(cfg={}) {
-    super({ name:'Blade Storm',icon:'🌀',color:'#ffaa00',
-      description:'Erupts in an expanding energy ring that damages nearby opponents.',
-      cooldown:cfg.cooldown??5, behaviorType:'aggressive', ...cfg });
-  }
-  tryActivate(targets, projectiles, _arena, ps) {
-    if (!this.canActivate()) return;
-    const close=targets.filter(t=>t!==this.owner&&t.alive&&t.pos.distTo(this.owner.pos)<(this._cfg.range??130)+t.radius);
-    if (!close.length) return;
-    projectiles.push(new StormRing(this.owner.pos.clone(),this.owner,this._cfg));
-    this.cdTimer=this.cooldown; SFX.bladeStorm();
+/* ── BLADE STORM ────────────────────────────────────────── */
+class BladeStormAbility extends Ability{
+  constructor(cfg={}){super({name:'Blade Storm',icon:'🌀',color:'#ffaa00',description:'Expanding energy ring — AoE damage.',cooldown:cfg.cooldown??5,behaviorType:'aggressive',...cfg});}
+  tryActivate(targets,projectiles,_arena,ps){
+    if(!this.canActivate())return;const close=targets.filter(t=>t!==this.owner&&t.alive&&t.pos.distTo(this.owner.pos)<(this._cfg.range??130)+t.radius);
+    if(!close.length)return;projectiles.push(new StormRing(this.owner.pos.clone(),this.owner,this._cfg));this.cdTimer=this.cooldown;SFX.bladeStorm();
     ps?.emit(18,{pos:this.owner.pos,color:['#ffaa00','#ff8800','#ffee44'],speed:60,minSize:2,maxSize:5,minLife:0.18,maxLife:0.45});
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   MINE ABILITY
-═══════════════════════════════════════════════════ */
-class MineAbility extends Ability {
-  constructor(cfg={}) {
-    super({ name:'Minelayer',icon:'💣',color:'#ff6600',
-      description:'Drops proximity mines that arm fast and explode with AoE knockback.',
-      cooldown:cfg.cooldown??2.0, behaviorType:'evasive', ...cfg });
-    this.maxMines=cfg.maxMines??7; this._activeMineCount=0;
-  }
-  tryActivate(targets, projectiles, _arena, _ps) {
-    if (!this.canActivate()||this._activeMineCount>=this.maxMines) return;
-    if (!targets.some(t=>t!==this.owner&&t.alive)) return;
-    const existing=projectiles.filter(p=>p instanceof Mine&&p.active);
-    if (existing.some(m=>m.pos.distTo(this.owner.pos)<50)) return;
-    const mine=new Mine(this.owner.pos.clone(),this.owner,this._cfg);
-    mine._abilityRef=this; projectiles.push(mine); this._activeMineCount++; this.cdTimer=this.cooldown;
-    SFX.mineLay();
+/* ── MINELAYER ──────────────────────────────────────────── */
+class MineAbility extends Ability{
+  constructor(cfg={}){super({name:'Minelayer',icon:'💣',color:'#ff6600',description:'Fast-arming proximity mines — AoE explosion + knockback.',cooldown:cfg.cooldown??2.0,behaviorType:'evasive',...cfg});this.maxMines=cfg.maxMines??7;this._activeMineCount=0;}
+  tryActivate(targets,projectiles){
+    if(!this.canActivate()||this._activeMineCount>=this.maxMines)return;if(!targets.some(t=>t!==this.owner&&t.alive))return;
+    const existing=projectiles.filter(p=>p instanceof Mine&&p.active);if(existing.some(m=>m.pos.distTo(this.owner.pos)<50))return;
+    const mine=new Mine(this.owner.pos.clone(),this.owner,this._cfg);mine._abilityRef=this;projectiles.push(mine);this._activeMineCount++;this.cdTimer=this.cooldown;SFX.mineLay();
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   ABILITY REGISTRY
-═══════════════════════════════════════════════════ */
-const AbilityRegistry = (() => {
-  const map={};
-  return {
-    register(key,factory,meta){ map[key]={factory,key,...meta}; },
-    create(key){ if(!map[key])throw new Error(`Unknown ability: ${key}`); return map[key].factory(); },
-    getAll(){ return Object.values(map); },
-  };
-})();
-
-AbilityRegistry.register('harpoon', ()=>new HarpoonAbility({
-  maxBounces:GameConfig.harpoonBounces, cooldown:GameConfig.harpoonCooldown,
-  hitDamage:GameConfig.harpoonDamage, slamDamage:GameConfig.harpoonSlam,
-  projectileSpeed:GameConfig.harpoonSpeed, retractSpeed:GameConfig.harpoonRetract,
-}),{ name:'Harpoon',icon:'⚓',color:'#4488ff', description:'Random-direction bouncing harpoon — snags & drags along exact bounce path' });
-
-AbilityRegistry.register('parasite', ()=>new ParasiteAbility({
-  dpsPerParasite:GameConfig.parasiteDPS, maxParasites:GameConfig.maxParasites, cooldown:GameConfig.parasiteCooldown,
-}),{ name:'Parasite',icon:'🦠',color:'#33ff88', description:'Contact infection — permanent stacking poison per hit' });
-
-AbilityRegistry.register('bladeStorm', ()=>new BladeStormAbility({
-  damage:GameConfig.stormDamage, range:GameConfig.stormRange, cooldown:GameConfig.stormCooldown,
-}),{ name:'Blade Storm',icon:'🌀',color:'#ffaa00', description:'Expanding energy ring — burst AoE damage' });
-
-AbilityRegistry.register('mineLayer', ()=>new MineAbility({
-  mineDamage:GameConfig.mineDamage, maxMines:GameConfig.maxMines, cooldown:GameConfig.mineCooldown,
-  mineArmDelay:GameConfig.mineArmDelay, mineTriggerR:GameConfig.mineTriggerR,
-}),{ name:'Minelayer',icon:'💣',color:'#ff6600', description:'Fast-arming proximity mines — AoE explosion + knockback' });
-
-/* ═══════════════════════════════════════════════════
-   ARENA
-═══════════════════════════════════════════════════ */
-class Arena {
-  constructor(cx,cy,radius) { this.center=new Vec2(cx,cy); this.radius=radius; this._wAngle=0; }
-  update(dt) { this._wAngle+=dt*0.25; }
-  constrainEntity(entity) {
-    const from=entity.pos.sub(this.center), dist=from.len(), limit=this.radius-entity.radius;
-    if (dist>limit) { const n=from.normalize(); entity.pos=this.center.add(n.scale(limit)); entity.vel=entity.vel.reflect(n).scale(0.82); return true; }
-    return false;
+/* ── PYRO (Fire fan + Burn DOT) ─────────────────────────── */
+class PyroAbility extends Ability{
+  constructor(cfg={}){
+    super({name:'Pyro Blast',icon:'🔥',color:'#ff4400',description:'Fans 5 fireballs in an arc — ignites opponents with burning damage.',cooldown:cfg.cooldown??3.5,behaviorType:'aggressive',...cfg});
+    this.chargeLevel=0;
   }
-  render(ctx) {
-    const {x,y}=this.center, R=this.radius;
-    const fg=ctx.createRadialGradient(x,y,0,x,y,R);
-    fg.addColorStop(0,'#0e0e24'); fg.addColorStop(0.7,'#0a0a1c'); fg.addColorStop(1,'#060614');
-    ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fill();
-    ctx.save(); ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.clip();
-    ctx.strokeStyle='#15153a'; ctx.lineWidth=1;
-    for (let gx=-R;gx<=R;gx+=44){ctx.beginPath();ctx.moveTo(x+gx,y-R);ctx.lineTo(x+gx,y+R);ctx.stroke();}
-    for (let gy=-R;gy<=R;gy+=44){ctx.beginPath();ctx.moveTo(x-R,y+gy);ctx.lineTo(x+R,y+gy);ctx.stroke();}
-    ctx.restore();
-    for (let r=70;r<R;r+=90){ctx.strokeStyle='#ffffff07';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
-    for (let i=0;i<4;i++){ctx.strokeStyle=`rgba(60,90,255,${0.08+i*0.06})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.arc(x,y,R-i*3,0,Math.PI*2);ctx.stroke();}
-    ctx.save(); ctx.translate(x,y); ctx.rotate(this._wAngle);
-    for (let i=0;i<16;i++){const a=(i/16)*Math.PI*2;ctx.fillStyle=i%4===0?'#4466ff':'#1a2266';ctx.beginPath();ctx.arc(Math.cos(a)*R,Math.sin(a)*R,i%4===0?5:3,0,Math.PI*2);ctx.fill();}
-    ctx.restore();
+  update(dt){super.update(dt);this.chargeLevel=this.canActivate()?Math.min(1,this.chargeLevel+dt*1.8):0;}
+  tryActivate(targets,projectiles,_arena,ps){
+    if(!this.canActivate())return;const enemies=targets.filter(t=>t!==this.owner&&t.alive);if(!enemies.length)return;
+    const nearest=enemies.reduce((a,b)=>a.pos.distTo(this.owner.pos)<b.pos.distTo(this.owner.pos)?a:b);
+    const baseAngle=Math.atan2(nearest.pos.y-this.owner.pos.y,nearest.pos.x-this.owner.pos.x);
+    for(let i=0;i<5;i++){const t=(i/4)-0.5,angle=baseAngle+t*(Math.PI/5.5);projectiles.push(new FireBall(this.owner.pos.clone(),Vec2.fromAngle(angle).scale(440),this.owner,this._cfg));}
+    this.cdTimer=this.cooldown;this.chargeLevel=0;SFX.fireBlast();
+    ps?.emit(20,{pos:this.owner.pos,color:['#ff4400','#ff8800','#ffcc22'],speed:110,minSize:3,maxSize:8,minLife:0.2,maxLife:0.55});
+  }
+  renderOnOwner(ctx,blade){
+    if(this.chargeLevel<0.1)return;
+    const{x,y}=blade.pos,pulse=0.7+0.3*Math.sin(Date.now()*0.012),g=ctx.createRadialGradient(x,y,0,x,y,blade.radius*2.8*this.chargeLevel);
+    g.addColorStop(0,`rgba(255,100,0,${0.5*this.chargeLevel*pulse})`);g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,blade.radius*2.8*this.chargeLevel,0,Math.PI*2);ctx.fill();
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   BLADE  (main entity)
-═══════════════════════════════════════════════════ */
-class Blade {
-  constructor(cfg) {
-    this.name=cfg.name; this.pos=cfg.pos.clone();
-    this.vel=Vec2.random().scale(rng.range(55,100)*(GameConfig.speedMult??1));
-    this.angle=0; this.spinRate=rng.range(9,16); this.radius=22;
-    this.color=cfg.color; this.glowColor=cfg.glowColor; this.blades=cfg.blades??3;
-    this.maxHealth=cfg.maxHealth??200; this.health=this.maxHealth; this.alive=true;
-    this.ability=cfg.ability; cfg.ability.attachTo(this);
-    this.parasites=[]; this.poisonDPS=0; this.caughtBy=null;
-    this.trail=[]; this.trailMax=30; this.hitFlash=0; this.colCooldown=0;
-    this._backoffTimer=0; this._backoffFrom=new Vec2();
-    this._aiTimer=rng.range(1,3); this._wanderAng=Math.random()*Math.PI*2; this._wanderT=0;
+/* ── GLACIER (Ice burst + Slow) ─────────────────────────── */
+class GlacierAbility extends Ability{
+  constructor(cfg={}){
+    super({name:'Frost Lance',icon:'❄️',color:'#44aaff',description:'Fires 3 ice shards in burst — slows targets to a crawl on hit.',cooldown:cfg.cooldown??2.8,behaviorType:'ranged',...cfg});
+  }
+  tryActivate(targets,projectiles,_arena,ps){
+    if(!this.canActivate())return;const enemies=targets.filter(t=>t!==this.owner&&t.alive);if(!enemies.length)return;
+    const nearest=enemies.reduce((a,b)=>a.pos.distTo(this.owner.pos)<b.pos.distTo(this.owner.pos)?a:b);
+    const baseAngle=Math.atan2(nearest.pos.y-this.owner.pos.y,nearest.pos.x-this.owner.pos.x);
+    for(let i=0;i<3;i++){const angle=baseAngle+(i-1)*0.09;projectiles.push(new IceShard(this.owner.pos.clone(),Vec2.fromAngle(angle).scale(700),this.owner,this._cfg));}
+    this.cdTimer=this.cooldown;SFX.iceShoot();
+    ps?.emit(12,{pos:this.owner.pos,color:['#aaeeff','#ffffff','#88ccff'],speed:90,minSize:2,maxSize:5,minLife:0.18,maxLife:0.4});
+  }
+  renderOnOwner(ctx,blade){
+    if(!this.canActivate())return;
+    const{x,y}=blade.pos,pulse=0.75+0.25*Math.sin(Date.now()*0.01),g=ctx.createRadialGradient(x,y,0,x,y,blade.radius*2.2);
+    g.addColorStop(0,`rgba(80,180,255,${0.32*pulse})`);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,blade.radius*2.2,0,Math.PI*2);ctx.fill();
+  }
+}
+
+/* ── ABILITY REGISTRY ───────────────────────────────────── */
+const AbilityRegistry=(()=>{const map={};return{register(k,f,m){map[k]={factory:f,key:k,...m};},create(k){if(!map[k])throw new Error(`Unknown ability: ${k}`);return map[k].factory();},getAll(){return Object.values(map);}};})();
+
+AbilityRegistry.register('harpoon',()=>new HarpoonAbility({maxBounces:GameConfig.harpoonBounces,cooldown:GameConfig.harpoonCooldown,hitDamage:GameConfig.harpoonDamage,slamDamage:GameConfig.harpoonSlam,projectileSpeed:GameConfig.harpoonSpeed,retractSpeed:GameConfig.harpoonRetract}),{name:'Harpoon',icon:'⚓',color:'#4488ff',description:'Random-direction bouncing harpoon — hooks & drags along exact path'});
+AbilityRegistry.register('parasite',()=>new ParasiteAbility({dpsPerParasite:GameConfig.parasiteDPS,maxParasites:GameConfig.maxParasites,cooldown:GameConfig.parasiteCooldown}),{name:'Parasite',icon:'🦠',color:'#33ff88',description:'Contact infection — permanent stacking poison'});
+AbilityRegistry.register('bladeStorm',()=>new BladeStormAbility({damage:GameConfig.stormDamage,range:GameConfig.stormRange,cooldown:GameConfig.stormCooldown}),{name:'Blade Storm',icon:'🌀',color:'#ffaa00',description:'Expanding energy ring — AoE damage'});
+AbilityRegistry.register('mineLayer',()=>new MineAbility({mineDamage:GameConfig.mineDamage,maxMines:GameConfig.maxMines,cooldown:GameConfig.mineCooldown,mineArmDelay:GameConfig.mineArmDelay,mineTriggerR:GameConfig.mineTriggerR}),{name:'Minelayer',icon:'💣',color:'#ff6600',description:'Fast-arming mines — explosion + knockback'});
+AbilityRegistry.register('pyro',()=>new PyroAbility({fireDamage:GameConfig.fireDamage,fireBurnDps:GameConfig.fireBurnDps,fireBurnDur:GameConfig.fireBurnDur,cooldown:GameConfig.fireCooldown}),{name:'Pyro Blast',icon:'🔥',color:'#ff4400',description:'Fan of 5 fireballs — burning DOT on hit'});
+AbilityRegistry.register('glacier',()=>new GlacierAbility({iceDamage:GameConfig.iceDamage,iceSlowDur:GameConfig.iceSlowDur,iceSlowFactor:GameConfig.iceSlowFactor,cooldown:GameConfig.iceCooldown}),{name:'Frost Lance',icon:'❄️',color:'#44aaff',description:'3-shard ice burst — slows target to 30% speed'});
+
+/* ── ARENA ──────────────────────────────────────────────── */
+class Arena{
+  constructor(cx,cy,radius){this.center=new Vec2(cx,cy);this.radius=radius;this._wAngle=0;}
+  update(dt){this._wAngle+=dt*0.25;}
+  constrainEntity(entity){const from=entity.pos.sub(this.center),dist=from.len(),limit=this.radius-entity.radius;if(dist>limit){const n=from.normalize();entity.pos=this.center.add(n.scale(limit));entity.vel=entity.vel.reflect(n).scale(0.82);return true;}return false;}
+  render(ctx){
+    const{x,y}=this.center,R=this.radius;
+    const fg=ctx.createRadialGradient(x,y,0,x,y,R);fg.addColorStop(0,'#0e0e24');fg.addColorStop(0.7,'#0a0a1c');fg.addColorStop(1,'#060614');ctx.fillStyle=fg;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();
+    ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.clip();ctx.strokeStyle='#15153a';ctx.lineWidth=1;for(let g=-R;g<=R;g+=44){ctx.beginPath();ctx.moveTo(x+g,y-R);ctx.lineTo(x+g,y+R);ctx.stroke();ctx.beginPath();ctx.moveTo(x-R,y+g);ctx.lineTo(x+R,y+g);ctx.stroke();}ctx.restore();
+    for(let r=70;r<R;r+=90){ctx.strokeStyle='#ffffff07';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
+    for(let i=0;i<4;i++){ctx.strokeStyle=`rgba(60,90,255,${0.08+i*0.06})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.arc(x,y,R-i*3,0,Math.PI*2);ctx.stroke();}
+    ctx.save();ctx.translate(x,y);ctx.rotate(this._wAngle);for(let i=0;i<16;i++){const a=(i/16)*Math.PI*2;ctx.fillStyle=i%4===0?'#4466ff':'#1a2266';ctx.beginPath();ctx.arc(Math.cos(a)*R,Math.sin(a)*R,i%4===0?5:3,0,Math.PI*2);ctx.fill();}ctx.restore();
+  }
+}
+
+/* ── BLADE ──────────────────────────────────────────────── */
+class Blade{
+  constructor(cfg){
+    this.name=cfg.name;this.pos=cfg.pos.clone();this.vel=Vec2.random().scale(rng.range(55,100)*(GameConfig.speedMult??1));
+    this.angle=0;this.spinRate=rng.range(9,16);this.radius=22;this.color=cfg.color;this.glowColor=cfg.glowColor;this.blades=cfg.blades??3;
+    this.maxHealth=cfg.maxHealth??200;this.health=this.maxHealth;this.alive=true;
+    this.ability=cfg.ability;cfg.ability.attachTo(this);
+    this.parasites=[];this.poisonDPS=0;this.caughtBy=null;
+    this.effects=[];this.effectSpeedMult=1;  // status effects (fire, ice, etc.)
+    this.trail=[];this.trailMax=30;this.hitFlash=0;this.colCooldown=0;
+    this._backoffTimer=0;this._backoffFrom=new Vec2();this._spinHandle=null;
+    this._aiTimer=rng.range(1,3);this._wanderAng=Math.random()*Math.PI*2;this._wanderT=0;
   }
 
-  update(dt, arena, others, projectiles, ps) {
-    if (!this.alive) return;
-    this.angle+=this.spinRate*dt; this.hitFlash=Math.max(0,this.hitFlash-dt*5);
-    this.colCooldown=Math.max(0,this.colCooldown-dt); this._backoffTimer=Math.max(0,this._backoffTimer-dt);
+  addEffect(effect){
+    // Replace same-type effect (refresh, don't stack)
+    this.effects=this.effects.filter(e=>e.type!==effect.type);this.effects.push(effect);
+  }
+
+  update(dt,arena,others,projectiles,ps){
+    if(!this.alive)return;
+    this.hitFlash=Math.max(0,this.hitFlash-dt*5);this.colCooldown=Math.max(0,this.colCooldown-dt);this._backoffTimer=Math.max(0,this._backoffTimer-dt);
     this.ability.update(dt);
-    if (this.poisonDPS>0) {
-      this.takeDamage(this.poisonDPS*dt,'poison',null);
-      if (rng.chance(dt*Math.min(this.parasites.length,5)*2)) { SFX.poisonTick(); ps.emit(1,{pos:this.pos,color:'#33ff88',speed:35,minSize:1,maxSize:2.5,minLife:0.4,maxLife:1.0,alpha:0.55}); }
-    }
+    // Process status effects
+    this.effects=this.effects.filter(e=>{e.update(dt,this,ps);return e.active;});
+    this.effectSpeedMult=this.effects.reduce((m,e)=>m*(e.speedMult??1),1);
+    // Spinning (slows when frozen)
+    this.angle+=this.spinRate*this.effectSpeedMult*dt;
+    // Poison
+    if(this.poisonDPS>0){this.takeDamage(this.poisonDPS*dt,'poison',null);if(rng.chance(dt*Math.min(this.parasites.length,5)*2)){SFX.poisonTick();ps.emit(1,{pos:this.pos,color:'#33ff88',speed:35,minSize:1,maxSize:2.5,minLife:0.4,maxLife:1.0,alpha:0.55});}}
     this.parasites.forEach(p=>p.update(dt));
-    if (!this.caughtBy) { this._ai(dt,others,arena,projectiles,ps); this.pos=this.pos.add(this.vel.scale(dt)); if(arena.constrainEntity(this))SFX.bladeWallHit(); }
-    this.trail.push(this.pos.clone()); if (this.trail.length>this.trailMax) this.trail.shift();
-    if (this.health<=0&&this.alive) {
-      this.alive=false;
-      if(this._spinHandle){this._spinHandle.stop();this._spinHandle=null;}
-      SFX.baybladeKO();
-      ps.emit(60,{pos:this.pos,color:[this.color,this.glowColor,'#ffffff','#ffaa44'],speed:270,minSize:3,maxSize:12,minLife:0.5,maxLife:1.7});
-    }
+    if(!this.caughtBy){this._ai(dt,others,arena,projectiles,ps);this.pos=this.pos.add(this.vel.scale(dt));if(arena.constrainEntity(this))SFX.bladeWallHit();}
+    this.trail.push(this.pos.clone());if(this.trail.length>this.trailMax)this.trail.shift();
+    if(this.health<=0&&this.alive){this.alive=false;if(this._spinHandle){this._spinHandle.stop();this._spinHandle=null;}SFX.baybladeKO();ps.emit(60,{pos:this.pos,color:[this.color,this.glowColor,'#ffffff','#ffaa44'],speed:270,minSize:3,maxSize:12,minLife:0.5,maxLife:1.7});}
   }
 
-  _ai(dt, others, arena, projectiles, ps) {
-    const enemies=others.filter(o=>o!==this&&o.alive);
-    if (!enemies.length) return;
+  _ai(dt,others,arena,projectiles,ps){
+    const enemies=others.filter(o=>o!==this&&o.alive);if(!enemies.length)return;
     const nearest=enemies.reduce((a,b)=>a.pos.distTo(this.pos)<b.pos.distTo(this.pos)?a:b);
-    this._aiTimer-=dt;
-    if (this._aiTimer<=0) { this.ability.tryActivate(enemies,projectiles,arena,ps); this._aiTimer=rng.range(0.4,1.8); }
-    if (this._backoffTimer>0) { const away=this.pos.sub(this._backoffFrom).normalize().scale(195*(GameConfig.speedMult)); this.vel=Vec2.lerp(this.vel,away,dt*5); return; }
-    const S=GameConfig.speedMult, bt=this.ability.behaviorType;
+    this._aiTimer-=dt;if(this._aiTimer<=0){this.ability.tryActivate(enemies,projectiles,arena,ps);this._aiTimer=rng.range(0.4,1.8);}
+    if(this._backoffTimer>0){const away=this.pos.sub(this._backoffFrom).normalize().scale(195*GameConfig.speedMult*this.effectSpeedMult);this.vel=Vec2.lerp(this.vel,away,dt*5);return;}
+    const S=GameConfig.speedMult*this.effectSpeedMult,bt=this.ability.behaviorType;
     let repulsion=new Vec2();
-    if (bt!=='aggressive') {
-      for (const o of others) { if(o===this||!o.alive)continue; const d=this.pos.distTo(o.pos); if(d<115&&d>1)repulsion=repulsion.add(this.pos.sub(o.pos).normalize().scale((115-d)*1.4)); }
-    }
+    if(bt!=='aggressive'){for(const o of others){if(o===this||!o.alive)continue;const d=this.pos.distTo(o.pos);if(d<115&&d>1)repulsion=repulsion.add(this.pos.sub(o.pos).normalize().scale((115-d)*1.4));}}
 
-    if (bt==='tactical') {
-      // Phase 0: Dodge armed mines (highest priority)
+    if(bt==='tactical'){
+      // Phase 0: dodge armed mines
       const armedMines=projectiles.filter(p=>p instanceof Mine&&p.active&&p.armed&&p.owner!==this);
-      let mineRisk=false, mineFleeVel=new Vec2();
-      for (const m of armedMines) {
-        const toMe=this.pos.sub(m.pos), dist=toMe.len(), risk=m.triggerR+this.radius+38;
-        if (dist<risk) { mineFleeVel=mineFleeVel.add(toMe.normalize().scale((risk-dist)*4)); mineRisk=true; }
-      }
-      if (mineRisk) { this.vel=Vec2.lerp(this.vel,mineFleeVel.normalize().scale(225*S),dt*7); return; }
+      let mineRisk=false,mineFleeVel=new Vec2();
+      for(const m of armedMines){const toMe=this.pos.sub(m.pos),dist=toMe.len(),risk=m.triggerR+this.radius+40;if(dist<risk){mineFleeVel=mineFleeVel.add(toMe.normalize().scale((risk-dist)*4));mineRisk=true;}}
+      if(mineRisk){this.vel=Vec2.lerp(this.vel,mineFleeVel.normalize().scale(220*S),dt*7);return;}
+      // Phase 1: dodge incoming harpoons
+      const harps=projectiles.filter(p=>p instanceof HarpoonProjectile&&p.active&&!p.retracting&&p.owner!==this);
+      let dodging=false,dodgeVel=new Vec2();
+      for(const h of harps){const toMe=this.pos.sub(h.pos),dist=toMe.len();if(dist>260)continue;const hDir=h.vel.normalize(),ap=hDir.dot(toMe.normalize());if(ap<0.1)continue;const afp=toMe.sub(hDir.scale(toMe.dot(hDir))),perp=hDir.perp();dodgeVel=dodgeVel.add((perp.dot(afp)>=0?perp:perp.scale(-1)).scale(240*S));dodging=true;}
+      if(dodging){this.vel=Vec2.lerp(this.vel,dodgeVel.normalize().scale(240*S),dt*7);return;}
+      // Phase 2: just charge aggressively
+      this.vel=Vec2.lerp(this.vel,nearest.pos.sub(this.pos).normalize().scale(195*S),dt*3.5);
 
-      // Phase 1: Dodge flying harpoons
-      const flyingHarpoons=projectiles.filter(p=>p instanceof HarpoonProjectile&&p.active&&!p.retracting&&p.owner!==this);
-      let dodging=false, dodgeVel=new Vec2();
-      for (const h of flyingHarpoons) {
-        const toMe=this.pos.sub(h.pos), dist=toMe.len();
-        if (dist>260) continue;
-        const hDir=h.vel.normalize(), approaching=hDir.dot(toMe.normalize());
-        if (approaching<0.1) continue;
-        const awayFromPath=toMe.sub(hDir.scale(toMe.dot(hDir))), perp=hDir.perp();
-        const dodgeDir=perp.dot(awayFromPath)>=0?perp:perp.scale(-1);
-        dodgeVel=dodgeVel.add(dodgeDir.scale(240*S)); dodging=true;
-      }
-      if (dodging) { this.vel=Vec2.lerp(this.vel,dodgeVel.normalize().scale(240*S),dt*7); return; }
-
-      // Phase 2: Attack during harpoon cooldown; prefer harpoon targets
-      const harpoonEnemies=enemies.filter(e=>typeof e.ability.hasLive==='boolean');
-      const anyLive=harpoonEnemies.some(e=>e.ability.hasLive);
-      const safeWindow=harpoonEnemies.length===0||(!anyLive&&harpoonEnemies.every(e=>e.ability.cdTimer>0.5));
-      if (safeWindow) {
-        // Prefer attacking harpoon user; avoid mine-dense paths
-        let target=nearest;
-        if (harpoonEnemies.length>0) {
-          const best=harpoonEnemies.reduce((a,b)=>a.pos.distTo(this.pos)<b.pos.distTo(this.pos)?a:b);
-          const minesNear=projectiles.filter(p=>p instanceof Mine&&p.active&&p.armed&&p.pos.distTo(best.pos)<100);
-          if (minesNear.length<2) target=best;
-        }
-        this.vel=Vec2.lerp(this.vel,target.pos.sub(this.pos).normalize().scale(200*S),dt*4.0);
-      } else {
-        // Harpoon ready or live — orbit at safe range
-        const toNear=nearest.pos.sub(this.pos), dist=toNear.len(), safeR=180;
-        if (dist<safeR) { this.vel=Vec2.lerp(this.vel,toNear.normalize().scale(-160*S).add(repulsion),dt*3.5); }
-        else {
-          const perp=toNear.perp().normalize().scale(138*S);
-          const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.58?toC.normalize().scale(100*S):new Vec2();
-          this.vel=Vec2.lerp(this.vel,perp.add(pull),dt*2.5);
-        }
-      }
-
-    } else if (bt==='aggressive') {
+    }else if(bt==='aggressive'){
       this.vel=Vec2.lerp(this.vel,nearest.pos.sub(this.pos).normalize().scale(185*S),dt*3.2);
 
-    } else if (bt==='ranged') {
-      this._wanderT-=dt;
-      if (this._wanderT<=0){this._wanderAng=Math.random()*Math.PI*2;this._wanderT=rng.range(1.2,3.0);}
-      const wander=Vec2.fromAngle(this._wanderAng).scale(130*S);
-      const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.55?toC.normalize().scale(165*S):new Vec2();
+    }else if(bt==='ranged'){
+      this._wanderT-=dt;if(this._wanderT<=0){this._wanderAng=Math.random()*Math.PI*2;this._wanderT=rng.range(1.2,3.0);}
+      const wander=Vec2.fromAngle(this._wanderAng).scale(130*S),toC=arena.center.sub(this.pos),pull=toC.len()>arena.radius*0.55?toC.normalize().scale(165*S):new Vec2();
       this.vel=Vec2.lerp(this.vel,wander.add(pull).add(repulsion),dt*1.7);
 
-    } else if (bt==='evasive') {
-      // Zone-based mine-laying strategy:
-      // < 100: emergency flee; 100-175: orbit (drop mines here); > 175: approach to get in range
-      const toNearest=nearest.pos.sub(this.pos), d=toNearest.len();
-      if (d<100) {
-        this.vel=Vec2.lerp(this.vel,toNearest.normalize().scale(-200*S).add(repulsion),dt*5);
-      } else if (d<175) {
-        // Sweet spot — orbit so mines get laid between us and enemy
-        const perp=toNearest.perp().normalize().scale(155*S);
-        const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.6?toC.normalize().scale(95*S):new Vec2();
-        this.vel=Vec2.lerp(this.vel,perp.add(pull),dt*2.5);
-      } else {
-        // Too far — carefully approach to mine-laying range
-        const toward=toNearest.normalize().scale(145*S), perp=toNearest.perp().normalize().scale(55*S);
-        const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.65?toC.normalize().scale(75*S):new Vec2();
-        this.vel=Vec2.lerp(this.vel,toward.add(perp).add(pull).add(repulsion),dt*2);
-      }
+    }else if(bt==='evasive'){
+      const toNear=nearest.pos.sub(this.pos),d=toNear.len();
+      if(d<100){this.vel=Vec2.lerp(this.vel,toNear.normalize().scale(-200*S).add(repulsion),dt*5);}
+      else if(d<175){const perp=toNear.perp().normalize().scale(155*S),toC=arena.center.sub(this.pos),pull=toC.len()>arena.radius*0.6?toC.normalize().scale(95*S):new Vec2();this.vel=Vec2.lerp(this.vel,perp.add(pull),dt*2.5);}
+      else{const toward=toNear.normalize().scale(145*S),perp=toNear.perp().normalize().scale(55*S),toC=arena.center.sub(this.pos),pull=toC.len()>arena.radius*0.65?toC.normalize().scale(75*S):new Vec2();this.vel=Vec2.lerp(this.vel,toward.add(perp).add(pull).add(repulsion),dt*2);}
 
-    } else {
-      const toC=arena.center.sub(this.pos), perp=toC.perp().normalize().scale(140*S);
-      this.vel=Vec2.lerp(this.vel,perp.add(toC.normalize().scale(40*S)).add(repulsion),dt*2);
+    }else{
+      const toC=arena.center.sub(this.pos),perp=toC.perp().normalize().scale(140*S);this.vel=Vec2.lerp(this.vel,perp.add(toC.normalize().scale(40*S)).add(repulsion),dt*2);
     }
   }
 
-  takeDamage(amount, type, _source) {
-    if (!this.alive) return;
-    this.health=Math.max(0,this.health-amount);
-    if (type!=='poison') this.hitFlash=1;
-  }
+  takeDamage(amount,type,_s){if(!this.alive)return;this.health=Math.max(0,this.health-amount);if(type!=='poison')this.hitFlash=1;}
+  onCollisionWith(other,ps){if(this.colCooldown>0)return;this.ability.onCollision(other,ps);this.colCooldown=0.28;this._backoffTimer=0.55;this._backoffFrom=other.pos.clone();}
 
-  onCollisionWith(other, ps) {
-    if (this.colCooldown>0) return;
-    this.ability.onCollision(other,ps);
-    this.colCooldown=0.28; this._backoffTimer=0.55; this._backoffFrom=other.pos.clone();
-  }
-
-  render(ctx) {
-    if (!this.alive) return;
-    if (this.trail.length>1) {
-      ctx.save(); ctx.lineCap='round';
-      for (let i=1;i<this.trail.length;i++){const t=i/this.trail.length;ctx.globalAlpha=t*0.20;ctx.strokeStyle=this.glowColor;ctx.lineWidth=t*this.radius*0.55;ctx.beginPath();ctx.moveTo(this.trail[i-1].x,this.trail[i-1].y);ctx.lineTo(this.trail[i].x,this.trail[i].y);ctx.stroke();}
-      ctx.restore();
-    }
+  render(ctx){
+    if(!this.alive)return;
+    // Trail
+    if(this.trail.length>1){ctx.save();ctx.lineCap='round';for(let i=1;i<this.trail.length;i++){const t=i/this.trail.length;ctx.globalAlpha=t*0.20;ctx.strokeStyle=this.glowColor;ctx.lineWidth=t*this.radius*0.55;ctx.beginPath();ctx.moveTo(this.trail[i-1].x,this.trail[i-1].y);ctx.lineTo(this.trail[i].x,this.trail[i].y);ctx.stroke();}ctx.restore();}
+    // Status effect overlays (fire glow, ice crystals)
+    this.effects.forEach(e=>e.renderOnBlade&&e.renderOnBlade(ctx,this));
+    // Ability charge/ready visual on owner
+    this.ability.renderOnOwner(ctx,this);
+    // Parasites
     this.parasites.forEach(p=>p.render(ctx,this));
-    ctx.save(); ctx.translate(this.pos.x,this.pos.y);
-    const ambient=ctx.createRadialGradient(0,0,this.radius*0.4,0,0,this.radius*2.8);
-    ambient.addColorStop(0,this.glowColor+'40'); ambient.addColorStop(1,'transparent');
-    ctx.fillStyle=ambient; ctx.beginPath(); ctx.arc(0,0,this.radius*2.8,0,Math.PI*2); ctx.fill();
-    if (this.hitFlash>0){const flash=ctx.createRadialGradient(0,0,0,0,0,this.radius*2.2);flash.addColorStop(0,`rgba(255,255,255,${this.hitFlash*0.7})`);flash.addColorStop(1,'transparent');ctx.fillStyle=flash;ctx.beginPath();ctx.arc(0,0,this.radius*2.2,0,Math.PI*2);ctx.fill();}
+    ctx.save();ctx.translate(this.pos.x,this.pos.y);
+    // Ambient glow
+    const ambient=ctx.createRadialGradient(0,0,this.radius*0.4,0,0,this.radius*2.8);ambient.addColorStop(0,this.glowColor+'40');ambient.addColorStop(1,'transparent');ctx.fillStyle=ambient;ctx.beginPath();ctx.arc(0,0,this.radius*2.8,0,Math.PI*2);ctx.fill();
+    if(this.hitFlash>0){const flash=ctx.createRadialGradient(0,0,0,0,0,this.radius*2.2);flash.addColorStop(0,`rgba(255,255,255,${this.hitFlash*0.7})`);flash.addColorStop(1,'transparent');ctx.fillStyle=flash;ctx.beginPath();ctx.arc(0,0,this.radius*2.2,0,Math.PI*2);ctx.fill();}
     ctx.rotate(this.angle);
-    for (let i=0;i<this.blades;i++){
-      ctx.save(); ctx.rotate((i/this.blades)*Math.PI*2); ctx.fillStyle=this.color;
-      ctx.beginPath(); ctx.moveTo(0,-4); ctx.bezierCurveTo(this.radius*0.4,-12,this.radius*0.85,-11,this.radius,-5);
-      ctx.arc(this.radius*0.88,0,6,-Math.PI*0.6,Math.PI*0.6); ctx.bezierCurveTo(this.radius*0.85,11,this.radius*0.4,12,0,4); ctx.closePath(); ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,0.17)'; ctx.beginPath(); ctx.moveTo(2,-2); ctx.lineTo(this.radius*0.65,-7); ctx.lineTo(this.radius*0.65,-2); ctx.lineTo(2,0); ctx.closePath(); ctx.fill();
-      ctx.restore();
+    for(let i=0;i<this.blades;i++){
+      ctx.save();ctx.rotate((i/this.blades)*Math.PI*2);ctx.fillStyle=this.color;
+      ctx.beginPath();ctx.moveTo(0,-4);ctx.bezierCurveTo(this.radius*0.4,-12,this.radius*0.85,-11,this.radius,-5);ctx.arc(this.radius*0.88,0,6,-Math.PI*0.6,Math.PI*0.6);ctx.bezierCurveTo(this.radius*0.85,11,this.radius*0.4,12,0,4);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.17)';ctx.beginPath();ctx.moveTo(2,-2);ctx.lineTo(this.radius*0.65,-7);ctx.lineTo(this.radius*0.65,-2);ctx.lineTo(2,0);ctx.closePath();ctx.fill();ctx.restore();
     }
-    ctx.fillStyle='#0d0d22'; ctx.beginPath(); ctx.arc(0,0,this.radius*0.38,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=this.glowColor; ctx.beginPath(); ctx.arc(0,0,this.radius*0.24,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(0,0,this.radius*0.10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0d0d22';ctx.beginPath();ctx.arc(0,0,this.radius*0.38,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=this.glowColor;ctx.beginPath();ctx.arc(0,0,this.radius*0.24,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(0,0,this.radius*0.10,0,Math.PI*2);ctx.fill();
     ctx.restore();
-    ctx.fillStyle='rgba(200,200,255,0.7)'; ctx.font='bold 10px system-ui'; ctx.textAlign='center';
-    ctx.fillText(this.name,this.pos.x,this.pos.y-this.radius-15);
+    ctx.fillStyle='rgba(200,200,255,0.7)';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(this.name,this.pos.x,this.pos.y-this.radius-15);
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   GAME
-═══════════════════════════════════════════════════ */
-class Game {
-  constructor(canvas) {
-    this.canvas=canvas; this.ctx=canvas.getContext('2d');
-    this.W=canvas.width; this.H=canvas.height;
+/* ── GAME ───────────────────────────────────────────────── */
+class Game{
+  constructor(canvas){
+    this.canvas=canvas;this.ctx=canvas.getContext('2d');this.W=canvas.width;this.H=canvas.height;
     this.arena=new Arena(this.W/2,this.H/2,Math.min(this.W,this.H)/2-28);
-    this.blades=[]; this.projectiles=[]; this.ps=new ParticleSystem();
-    this.state='idle'; this.winner=null; this._lastTs=null;
-    const loop=(ts)=>{
-      requestAnimationFrame(loop);
-      const dt=Math.min(((ts-(this._lastTs??ts))/1000),0.05); this._lastTs=ts;
-      if(this.state==='running')this._update(dt); this._render();
-    };
+    this.blades=[];this.projectiles=[];this.ps=new ParticleSystem();this.state='idle';this.winner=null;this._lastTs=null;
+    const loop=(ts)=>{requestAnimationFrame(loop);const dt=Math.min(((ts-(this._lastTs??ts))/1000),0.05);this._lastTs=ts;if(this.state==='running')this._update(dt);this._render();};
     requestAnimationFrame(loop);
   }
-  start(configs) {
-    this.winner=null; this.projectiles=[]; this.ps=new ParticleSystem();
-    this.blades=configs.map(c=>new Blade(c)); this.state='running';
-    SFX.resume(); SFX.battleStart();
-    // Start per-blade spinning sound after audio context is live
-    this.blades.forEach(b=>{ b._spinHandle=SFX.createSpinLoop(b.spinRate); });
+  start(configs){
+    this.winner=null;this.projectiles=[];this.ps=new ParticleSystem();
+    this.blades=configs.map(c=>new Blade(c));this.state='running';
+    SFX.resume();SFX.battleStart();this.blades.forEach(b=>{b._spinHandle=SFX.createSpinLoop(b.spinRate);});
   }
-  reset() {
-    // Stop all spinning sounds before clearing
-    this.blades.forEach(b=>{ if(b._spinHandle){b._spinHandle.stop();b._spinHandle=null;} });
-    // Stop any live harpoon whirrs
-    this.projectiles.forEach(p=>{ if(p._whirrHandle){p._whirrHandle.stop();p._whirrHandle=null;} });
-    this.state='idle'; this.winner=null; this.blades=[]; this.projectiles=[]; this.ps=new ParticleSystem();
+  reset(){
+    this.blades.forEach(b=>{if(b._spinHandle){b._spinHandle.stop();b._spinHandle=null;}});
+    this.projectiles.forEach(p=>{if(p.onDeactivate)p.onDeactivate();});
+    this.state='idle';this.winner=null;this.blades=[];this.projectiles=[];this.ps=new ParticleSystem();
   }
-
-  _update(dt) {
-    this.arena.update(dt); this.ps.update(dt);
-    this.projectiles=this.projectiles.filter(p=>{
-      p.update(dt,this.arena,this.blades,this.ps);
-      if(!p.active){if(p._abilityRef&&p._abilityRef.hasLive!==undefined)p._abilityRef.hasLive=false;p.onDeactivate();}
-      return p.active;
-    });
+  _update(dt){
+    this.arena.update(dt);this.ps.update(dt);
+    this.projectiles=this.projectiles.filter(p=>{p.update(dt,this.arena,this.blades,this.ps);if(!p.active){if(p._abilityRef&&p._abilityRef.hasLive!==undefined)p._abilityRef.hasLive=false;p.onDeactivate();}return p.active;});
     this.blades.forEach(b=>b.update(dt,this.arena,this.blades,this.projectiles,this.ps));
-    // Blade–Blade collisions
-    for (let i=0;i<this.blades.length;i++) {
-      for (let j=i+1;j<this.blades.length;j++) {
-        const a=this.blades[i],b=this.blades[j];
-        if(!a.alive||!b.alive||a.caughtBy||b.caughtBy)continue;
-        const d=a.pos.distTo(b.pos),min=a.radius+b.radius;
-        if(d>=min)continue;
-        const n=b.pos.sub(a.pos).normalize(),ov=min-d;
-        a.pos=a.pos.sub(n.scale(ov*0.5)); b.pos=b.pos.add(n.scale(ov*0.5));
-        const rv=a.vel.sub(b.vel).dot(n);
-        if(rv>0){const imp=rv*0.82;a.vel=a.vel.sub(n.scale(imp));b.vel=b.vel.add(n.scale(imp));}
-        const spd=Math.abs(a.vel.sub(b.vel).dot(n));
-        if(spd>25){a.takeDamage(spd*0.05,'collision',b);b.takeDamage(spd*0.05,'collision',a);SFX.collision(spd);}
-        a.onCollisionWith(b,this.ps); b.onCollisionWith(a,this.ps);
-        this.ps.emit(9,{pos:a.pos.add(b.pos).scale(0.5),color:['#ffffff',a.glowColor,b.glowColor],speed:140,minSize:2,maxSize:5,minLife:0.15,maxLife:0.4});
-      }
-    }
-    const alive=this.blades.filter(b=>b.alive);
-    if(alive.length<this.blades.length&&this.blades.length>0&&alive.length<=1){
-      this.winner=alive[0]??null; this.state='ended'; SFX.winnerFanfare();
-    }
+    for(let i=0;i<this.blades.length;i++){for(let j=i+1;j<this.blades.length;j++){
+      const a=this.blades[i],b=this.blades[j];if(!a.alive||!b.alive||a.caughtBy||b.caughtBy)continue;
+      const d=a.pos.distTo(b.pos),min=a.radius+b.radius;if(d>=min)continue;
+      const n=b.pos.sub(a.pos).normalize(),ov=min-d;a.pos=a.pos.sub(n.scale(ov*0.5));b.pos=b.pos.add(n.scale(ov*0.5));
+      const rv=a.vel.sub(b.vel).dot(n);if(rv>0){const imp=rv*0.82;a.vel=a.vel.sub(n.scale(imp));b.vel=b.vel.add(n.scale(imp));}
+      const spd=Math.abs(a.vel.sub(b.vel).dot(n));if(spd>25){a.takeDamage(spd*0.05,'collision',b);b.takeDamage(spd*0.05,'collision',a);SFX.collision(spd);}
+      a.onCollisionWith(b,this.ps);b.onCollisionWith(a,this.ps);
+      this.ps.emit(9,{pos:a.pos.add(b.pos).scale(0.5),color:['#ffffff',a.glowColor,b.glowColor],speed:140,minSize:2,maxSize:5,minLife:0.15,maxLife:0.4});
+    }}
+    const alive=this.blades.filter(b=>b.alive);if(alive.length<this.blades.length&&this.blades.length>0&&alive.length<=1){this.winner=alive[0]??null;this.state='ended';SFX.winnerFanfare();}
   }
-
-  _render() {
-    const {ctx,W,H}=this;
-    ctx.clearRect(0,0,W,H); ctx.fillStyle='#07071a'; ctx.fillRect(0,0,W,H);
-    this.arena.render(ctx); this.ps.render(ctx);
-    this.projectiles.forEach(p=>p.render(ctx));
-    this.blades.forEach(b=>b.render(ctx));
-    if(this.state==='ended'&&this.winner){
-      const t=((Date.now()%700)/700),r=58+t*24;
-      const pg=ctx.createRadialGradient(this.winner.pos.x,this.winner.pos.y,0,this.winner.pos.x,this.winner.pos.y,r);
-      pg.addColorStop(0,this.winner.glowColor+'55'); pg.addColorStop(1,'transparent');
-      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(this.winner.pos.x,this.winner.pos.y,r,0,Math.PI*2); ctx.fill();
-    }
-    this.blades.forEach(b=>{
-      if(!b.alive)return;
-      const cd=b.ability.cdFraction; if(cd<=0)return;
-      const bw=42,bh=4,bx=b.pos.x-bw/2,by=b.pos.y+b.radius+7;
-      ctx.fillStyle='#1a1a36'; ctx.fillRect(bx,by,bw,bh);
-      ctx.fillStyle=b.ability.color; ctx.fillRect(bx,by,bw*(1-cd),bh);
-    });
+  _render(){
+    const{ctx,W,H}=this;ctx.clearRect(0,0,W,H);ctx.fillStyle='#07071a';ctx.fillRect(0,0,W,H);
+    this.arena.render(ctx);this.ps.render(ctx);this.projectiles.forEach(p=>p.render(ctx));this.blades.forEach(b=>b.render(ctx));
+    if(this.state==='ended'&&this.winner){const t=((Date.now()%700)/700),r=58+t*24,pg=ctx.createRadialGradient(this.winner.pos.x,this.winner.pos.y,0,this.winner.pos.x,this.winner.pos.y,r);pg.addColorStop(0,this.winner.glowColor+'55');pg.addColorStop(1,'transparent');ctx.fillStyle=pg;ctx.beginPath();ctx.arc(this.winner.pos.x,this.winner.pos.y,r,0,Math.PI*2);ctx.fill();}
+    this.blades.forEach(b=>{if(!b.alive)return;const cd=b.ability.cdFraction;if(cd<=0)return;const bw=42,bh=4,bx=b.pos.x-bw/2,by=b.pos.y+b.radius+7;ctx.fillStyle='#1a1a36';ctx.fillRect(bx,by,bw,bh);ctx.fillStyle=b.ability.color;ctx.fillRect(bx,by,bw*(1-cd),bh);});
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   UI
-═══════════════════════════════════════════════════ */
-class UI {
-  constructor(game) {
+/* ── UI ─────────────────────────────────────────────────── */
+class UI{
+  constructor(game){
     this.game=game;
-    // Default fighter roster
     this.fighters=[
-      { name:'Vortex',    color:'#4488ff', glowColor:'#88bbff', abilityKey:'harpoon',   blades:3 },
-      { name:'Plague',    color:'#ff4466', glowColor:'#ff88aa', abilityKey:'parasite',  blades:3 },
-      { name:'Blastwave', color:'#ff6600', glowColor:'#ffaa44', abilityKey:'mineLayer', blades:4 },
+      {name:'Vortex',   color:'#4488ff',glowColor:'#88bbff',abilityKey:'harpoon',  blades:3},
+      {name:'Plague',   color:'#ff4466',glowColor:'#ff88aa',abilityKey:'parasite', blades:3},
+      {name:'Blastwave',color:'#ff6600',glowColor:'#ffaa44',abilityKey:'mineLayer',blades:4},
+      {name:'Ember',    color:'#ff3300',glowColor:'#ff9933',abilityKey:'pyro',     blades:4},
+      {name:'Glacier',  color:'#44aaff',glowColor:'#aaddff',abilityKey:'glacier',  blades:3},
     ];
-    this._buildCards();
-    this._buildConfigPanel();
-    this._buildLegend();
-    this._bindButtons();
-    this._uiLoop();
+    this._buildCards();this._buildConfigPanel();this._buildLegend();this._bindButtons();this._uiLoop();
   }
 
-  /* ── Fighter cards (stats only, no ability select) ── */
-  _buildCards() {
-    const container=document.getElementById('bay-cards');
-    container.innerHTML='';
+  _buildCards(){
+    const container=document.getElementById('bay-cards');container.innerHTML='';
     this.fighters.forEach((f,i)=>{
-      const card=document.createElement('div');
-      card.className='bay-card'; card.id=`bay-card-${i}`;
-      card.style.cssText=`background:${f.color}0d;border-color:${f.color}28;`;
+      const card=document.createElement('div');card.className='bay-card';card.id=`bay-card-${i}`;card.style.cssText=`background:${f.color}0d;border-color:${f.color}28;`;
       const icon=AbilityRegistry.getAll().find(a=>a.key===f.abilityKey)?.icon??'?';
-      card.innerHTML=`
-        <div class="bay-header">
-          <div class="bay-dot" style="background:${f.color};box-shadow:0 0 6px ${f.color};"></div>
-          <div class="bay-name">${f.name}</div>
-          <div class="bay-icon" id="bay-icon-${i}">${icon}</div>
-        </div>
+      card.innerHTML=`<div class="bay-header"><div class="bay-dot" style="background:${f.color};box-shadow:0 0 6px ${f.color};"></div><div class="bay-name">${f.name}</div><div class="bay-icon" id="bay-icon-${i}">${icon}</div></div>
         <div class="hp-track"><div class="hp-fill" id="hp-fill-${i}" style="width:100%;background:linear-gradient(90deg,${f.color},${f.glowColor});"></div></div>
         <div class="hp-text" id="hp-text-${i}">${GameConfig.health} / ${GameConfig.health}</div>
-        <div class="cd-row">
-          <div class="cd-label">CD</div>
-          <div class="cd-track"><div class="cd-fill" id="cd-fill-${i}" style="width:0%;background:${f.color};"></div></div>
-        </div>
+        <div class="cd-row"><div class="cd-label">CD</div><div class="cd-track"><div class="cd-fill" id="cd-fill-${i}" style="width:0%;background:${f.color};"></div></div></div>
         <div class="status-row" id="status-row-${i}"></div>`;
       container.appendChild(card);
     });
   }
 
-  /* ── Config panel: ability selects + sliders ── */
-  _buildConfigPanel() {
-    const body=document.getElementById('config-body');
-    const toggle=document.getElementById('cfg-toggle');
-
-    // Ability selects
+  _buildConfigPanel(){
+    const body=document.getElementById('config-body'),toggle=document.getElementById('cfg-toggle');
     let html='<div class="cfg-section">Fighters</div>';
     this.fighters.forEach((f,i)=>{
-      html+=`<div class="cfg-ability-row">
-        <label class="cfg-ability-label"><div class="bay-dot" style="background:${f.color};box-shadow:0 0 5px ${f.color};flex-shrink:0;width:8px;height:8px;border-radius:50%;"></div>${f.name}</label>
-        <select class="ability-select" id="ability-sel-${i}"></select>
-      </div>`;
+      html+=`<div class="cfg-ability-row"><label class="cfg-ability-label"><div style="width:8px;height:8px;border-radius:50%;background:${f.color};box-shadow:0 0 5px ${f.color};flex-shrink:0;"></div>${f.name}</label><select class="ability-select" id="ability-sel-${i}"></select></div>`;
     });
-
-    // Sliders
     const sliders=[
-      {section:'General'},
-      {key:'volume',     label:'Volume',         min:0,   max:1,   step:0.05, suffix:''},
-      {key:'health',     label:'Health',          min:80,  max:500, step:20,   suffix:''},
-      {key:'speedMult',  label:'Speed',           min:0.5, max:2.5, step:0.1,  suffix:'×'},
-      {section:'Harpoon'},
-      {key:'harpoonBounces',  label:'Bounces',    min:3,  max:22,  step:1,   suffix:''},
-      {key:'harpoonCooldown', label:'Cooldown',   min:2,  max:10,  step:0.5, suffix:'s'},
-      {key:'harpoonDamage',   label:'Hit DMG',    min:5,  max:50,  step:5,   suffix:''},
-      {key:'harpoonSlam',     label:'Slam DMG',   min:10, max:80,  step:5,   suffix:''},
-      {section:'Parasite'},
-      {key:'parasiteDPS',    label:'DPS/parasite', min:1,  max:12,  step:0.5, suffix:''},
-      {key:'maxParasites',   label:'Max parasites',min:2,  max:15,  step:1,   suffix:''},
-      {section:'Minelayer'},
-      {key:'mineDamage',   label:'Explosion DMG', min:15, max:100, step:5,  suffix:''},
-      {key:'maxMines',     label:'Max mines',     min:2,  max:12,  step:1,  suffix:''},
-      {key:'mineTriggerR', label:'Trigger radius',min:20, max:70,  step:2,  suffix:''},
-      {key:'mineArmDelay', label:'Arm delay',     min:0.1,max:2,   step:0.05,suffix:'s'},
+      {section:'General'},{key:'volume',label:'Volume',min:0,max:1,step:0.05,suffix:''},{key:'health',label:'Health',min:80,max:500,step:20,suffix:''},{key:'speedMult',label:'Speed',min:0.5,max:2.5,step:0.1,suffix:'×'},
+      {section:'Harpoon'},{key:'harpoonBounces',label:'Bounces',min:3,max:22,step:1,suffix:''},{key:'harpoonCooldown',label:'Cooldown',min:2,max:10,step:0.5,suffix:'s'},{key:'harpoonDamage',label:'Hit DMG',min:5,max:50,step:5,suffix:''},{key:'harpoonSlam',label:'Slam DMG',min:10,max:80,step:5,suffix:''},
+      {section:'Parasite'},{key:'parasiteDPS',label:'DPS/para',min:1,max:12,step:0.5,suffix:''},{key:'maxParasites',label:'Max para',min:2,max:15,step:1,suffix:''},
+      {section:'Minelayer'},{key:'mineDamage',label:'Explosion',min:15,max:100,step:5,suffix:''},{key:'maxMines',label:'Max mines',min:2,max:12,step:1,suffix:''},{key:'mineTriggerR',label:'Trigger R',min:20,max:70,step:2,suffix:''},
+      {section:'Fire'},{key:'fireDamage',label:'Hit DMG',min:5,max:30,step:1,suffix:''},{key:'fireBurnDps',label:'Burn DPS',min:1,max:15,step:0.5,suffix:''},{key:'fireCooldown',label:'Cooldown',min:1.5,max:8,step:0.5,suffix:'s'},
+      {section:'Ice'},{key:'iceDamage',label:'Hit DMG',min:5,max:30,step:1,suffix:''},{key:'iceSlowDur',label:'Slow dur',min:0.5,max:5,step:0.25,suffix:'s'},{key:'iceCooldown',label:'Cooldown',min:1,max:6,step:0.5,suffix:'s'},
     ];
-
     sliders.forEach(d=>{
       if(d.section){html+=`<div class="cfg-section">${d.section}</div>`;return;}
       const disp=d.key==='volume'?Math.round(GameConfig[d.key]*100)+'%':GameConfig[d.key]+d.suffix;
-      html+=`<div class="cfg-row">
-        <label class="cfg-label">${d.label}</label>
-        <input type="range" class="cfg-slider" min="${d.min}" max="${d.max}" step="${d.step}" value="${GameConfig[d.key]}" data-cfg="${d.key}" data-suffix="${d.suffix}">
-        <span class="cfg-val" id="cfgv-${d.key}">${disp}</span>
-      </div>`;
+      html+=`<div class="cfg-row"><label class="cfg-label">${d.label}</label><input type="range" class="cfg-slider" min="${d.min}" max="${d.max}" step="${d.step}" value="${GameConfig[d.key]}" data-cfg="${d.key}" data-suffix="${d.suffix}"><span class="cfg-val" id="cfgv-${d.key}">${disp}</span></div>`;
     });
-
     body.innerHTML=html;
-
-    // Wire ability selects
     this.fighters.forEach((f,i)=>{
       const sel=document.getElementById(`ability-sel-${i}`);
-      AbilityRegistry.getAll().forEach(a=>{ const opt=document.createElement('option');opt.value=a.key;opt.textContent=`${a.icon} ${a.name}`;sel.appendChild(opt); });
+      AbilityRegistry.getAll().forEach(a=>{const opt=document.createElement('option');opt.value=a.key;opt.textContent=`${a.icon} ${a.name}`;sel.appendChild(opt);});
       sel.value=f.abilityKey;
-      sel.addEventListener('change',()=>{
-        f.abilityKey=sel.value;
-        const icon=AbilityRegistry.getAll().find(a=>a.key===sel.value)?.icon??'?';
-        document.getElementById(`bay-icon-${i}`).textContent=icon;
-      });
+      sel.addEventListener('change',()=>{f.abilityKey=sel.value;const icon=AbilityRegistry.getAll().find(a=>a.key===sel.value)?.icon??'?';document.getElementById(`bay-icon-${i}`).textContent=icon;});
     });
-
-    // Wire sliders
     body.querySelectorAll('.cfg-slider').forEach(input=>{
-      const key=input.dataset.cfg, suffix=input.dataset.suffix;
-      const valEl=document.getElementById(`cfgv-${key}`);
-      input.addEventListener('input',()=>{
-        const v=parseFloat(input.value); GameConfig[key]=v;
-        if(key==='volume')SFX.setVolume(v);
-        valEl.textContent=key==='volume'?Math.round(v*100)+'%':v+suffix;
-      });
+      const key=input.dataset.cfg,suffix=input.dataset.suffix,valEl=document.getElementById(`cfgv-${key}`);
+      input.addEventListener('input',()=>{const v=parseFloat(input.value);GameConfig[key]=v;if(key==='volume')SFX.setVolume(v);valEl.textContent=key==='volume'?Math.round(v*100)+'%':v+suffix;});
     });
-
-    toggle.addEventListener('click',()=>{
-      const open=body.classList.toggle('open');
-      toggle.textContent=open?'▲ hide':'▼ show';
-    });
+    toggle.addEventListener('click',()=>{const open=body.classList.toggle('open');toggle.textContent=open?'▲ hide':'▼ show';});
   }
 
-  _buildLegend() {
-    const leg=document.getElementById('ability-legend');
-    leg.innerHTML='';
-    AbilityRegistry.getAll().forEach(a=>{
-      const el=document.createElement('div'); el.className='legend-entry';
-      el.innerHTML=`<div class="legend-icon-box" style="background:${a.color}1a;border:1px solid ${a.color}44;">${a.icon}</div>
-        <div><div class="legend-name" style="color:${a.color};">${a.name}</div><div class="legend-desc">${a.description}</div></div>`;
-      leg.appendChild(el);
-    });
+  _buildLegend(){
+    const leg=document.getElementById('ability-legend');leg.innerHTML='';
+    AbilityRegistry.getAll().forEach(a=>{const el=document.createElement('div');el.className='legend-entry';el.innerHTML=`<div class="legend-icon-box" style="background:${a.color}1a;border:1px solid ${a.color}44;">${a.icon}</div><div><div class="legend-name" style="color:${a.color};">${a.name}</div><div class="legend-desc">${a.description}</div></div>`;leg.appendChild(el);});
   }
 
-  _bindButtons() {
+  _bindButtons(){
     document.getElementById('btn-start').addEventListener('click',()=>{
       if(this.game.state==='running')return;
-      const {arena}=this.game, n=this.fighters.length;
-      const configs=this.fighters.map((f,i)=>({
-        name:f.name, color:f.color, glowColor:f.glowColor, blades:f.blades,
-        ability:AbilityRegistry.create(f.abilityKey),
-        maxHealth:GameConfig.health,
-        pos:arena.center.add(Vec2.fromAngle((i/n)*Math.PI*2-Math.PI/2).scale(115)),
-      }));
-      this.game.start(configs);
-      this._setSelDisabled(true);
-      document.getElementById('winner-overlay').classList.remove('visible');
-      document.getElementById('btn-start').disabled=true;
-      document.getElementById('state-label').textContent='Battle!';
+      const{arena}=this.game,n=this.fighters.length;
+      const configs=this.fighters.map((f,i)=>({name:f.name,color:f.color,glowColor:f.glowColor,blades:f.blades,ability:AbilityRegistry.create(f.abilityKey),maxHealth:GameConfig.health,pos:arena.center.add(Vec2.fromAngle((i/n)*Math.PI*2-Math.PI/2).scale(115))}));
+      this.game.start(configs);this._setSelDisabled(true);document.getElementById('winner-overlay').classList.remove('visible');document.getElementById('btn-start').disabled=true;document.getElementById('state-label').textContent='Battle!';
     });
-
     document.getElementById('btn-reset').addEventListener('click',()=>{
-      this.game.reset(); this._setSelDisabled(false);
-      document.getElementById('btn-start').disabled=false;
-      document.getElementById('btn-start').textContent='▶ Start';
-      document.getElementById('winner-overlay').classList.remove('visible');
-      document.getElementById('state-label').textContent='Ready';
-      this.fighters.forEach((_f,i)=>{
-        document.getElementById(`hp-fill-${i}`).style.width='100%';
-        document.getElementById(`hp-text-${i}`).textContent=`${GameConfig.health} / ${GameConfig.health}`;
-        document.getElementById(`cd-fill-${i}`).style.width='0%';
-        document.getElementById(`status-row-${i}`).innerHTML='';
-      });
+      this.game.reset();this._setSelDisabled(false);document.getElementById('btn-start').disabled=false;document.getElementById('btn-start').textContent='▶ Start';document.getElementById('winner-overlay').classList.remove('visible');document.getElementById('state-label').textContent='Ready';
+      this.fighters.forEach((_f,i)=>{document.getElementById(`hp-fill-${i}`).style.width='100%';document.getElementById(`hp-text-${i}`).textContent=`${GameConfig.health} / ${GameConfig.health}`;document.getElementById(`cd-fill-${i}`).style.width='0%';document.getElementById(`status-row-${i}`).innerHTML='';});
     });
   }
-
-  _setSelDisabled(v){ this.fighters.forEach((_f,i)=>{ document.getElementById(`ability-sel-${i}`).disabled=v; }); }
-
-  _uiLoop() { const t=()=>{requestAnimationFrame(t);this._sync();}; requestAnimationFrame(t); }
-
-  _sync() {
-    const {game}=this;
-    const chip=(text,bg,fg,border)=>{ const s=document.createElement('span');s.className='chip';s.style.cssText=`background:${bg};color:${fg};border:1px solid ${border};`;s.textContent=text;return s; };
+  _setSelDisabled(v){this.fighters.forEach((_f,i)=>document.getElementById(`ability-sel-${i}`).disabled=v);}
+  _uiLoop(){const t=()=>{requestAnimationFrame(t);this._sync();};requestAnimationFrame(t);}
+  _sync(){
+    const{game}=this;
+    const chip=(text,bg,fg,border)=>{const s=document.createElement('span');s.className='chip';s.style.cssText=`background:${bg};color:${fg};border:1px solid ${border};`;s.textContent=text;return s;};
     game.blades.forEach((b,i)=>{
-      const fill=document.getElementById(`hp-fill-${i}`),text=document.getElementById(`hp-text-${i}`),cdFill=document.getElementById(`cd-fill-${i}`),status=document.getElementById(`status-row-${i}`);
-      if(!fill)return;
-      const pct=Math.max(0,b.health/b.maxHealth);
-      fill.style.width=(pct*100).toFixed(1)+'%';
-      const f=this.fighters[i];
-      if(pct>0.6)fill.style.background=`linear-gradient(90deg,${f.color},${f.glowColor})`;
-      else if(pct>0.3)fill.style.background='linear-gradient(90deg,#aa8800,#ffcc00)';
-      else fill.style.background='linear-gradient(90deg,#880022,#ff2244)';
-      text.textContent=`${Math.ceil(Math.max(0,b.health))} / ${b.maxHealth}`;
-      cdFill.style.width=((1-b.ability.cdFraction)*100).toFixed(1)+'%';
+      const fill=document.getElementById(`hp-fill-${i}`),text=document.getElementById(`hp-text-${i}`),cdFill=document.getElementById(`cd-fill-${i}`),status=document.getElementById(`status-row-${i}`);if(!fill)return;
+      const pct=Math.max(0,b.health/b.maxHealth);fill.style.width=(pct*100).toFixed(1)+'%';
+      const f=this.fighters[i];if(pct>0.6)fill.style.background=`linear-gradient(90deg,${f.color},${f.glowColor})`;else if(pct>0.3)fill.style.background='linear-gradient(90deg,#aa8800,#ffcc00)';else fill.style.background='linear-gradient(90deg,#880022,#ff2244)';
+      text.textContent=`${Math.ceil(Math.max(0,b.health))} / ${b.maxHealth}`;cdFill.style.width=((1-b.ability.cdFraction)*100).toFixed(1)+'%';
       status.innerHTML='';
-      if(b.parasites.length>0){ status.appendChild(chip(`🦠×${b.parasites.length}`,'#33ff8820','#33ff88','#33ff8840')); status.appendChild(chip(`☠${b.poisonDPS.toFixed(1)}/s`,'#22aa5520','#66ffaa','#22aa5540')); }
+      if(b.parasites.length>0){status.appendChild(chip(`🦠×${b.parasites.length}`,'#33ff8820','#33ff88','#33ff8840'));status.appendChild(chip(`☠${b.poisonDPS.toFixed(1)}/s`,'#22aa5520','#66ffaa','#22aa5540'));}
       if(b.caughtBy)status.appendChild(chip('⚓Hooked!','#4488ff20','#88bbff','#4488ff40'));
       if(b.ability.name==='Minelayer'&&b.ability._activeMineCount>0)status.appendChild(chip(`💣×${b.ability._activeMineCount}`,'#ff660020','#ff9944','#ff660040'));
+      const burning=b.effects.find(e=>e.type==='fire');if(burning)status.appendChild(chip(`🔥${burning.dps.toFixed(1)}/s`,'#ff440020','#ff8844','#ff440040'));
+      const frozen=b.effects.find(e=>e.type==='ice');if(frozen)status.appendChild(chip(`❄️${Math.ceil(frozen.remaining*10)/10}s`,'#44aaff20','#aaddff','#44aaff40'));
       if(!b.alive)status.appendChild(chip('💀KO','#ff224420','#ff6688','#ff224440'));
     });
     if(game.state==='ended'){
       const overlay=document.getElementById('winner-overlay');
-      if(!overlay.classList.contains('visible')){
-        overlay.classList.add('visible');
-        const wt=document.getElementById('winner-text');
-        wt.textContent=game.winner?`${game.winner.name} Wins!`:'Draw!';
-        wt.style.color=game.winner?game.winner.glowColor:'#ffffff';
-        document.getElementById('state-label').textContent='Ended';
-        this._setSelDisabled(false);
-        const btn=document.getElementById('btn-start');
-        btn.disabled=false; btn.textContent='▶ Play Again';
-      }
+      if(!overlay.classList.contains('visible')){overlay.classList.add('visible');const wt=document.getElementById('winner-text');wt.textContent=game.winner?`${game.winner.name} Wins!`:'Draw!';wt.style.color=game.winner?game.winner.glowColor:'#ffffff';document.getElementById('state-label').textContent='Ended';this._setSelDisabled(false);const btn=document.getElementById('btn-start');btn.disabled=false;btn.textContent='▶ Play Again';}
     }
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   BOOTSTRAP
-═══════════════════════════════════════════════════ */
-window.addEventListener('load',()=>{ const game=new Game(document.getElementById('arena')); new UI(game); });
+/* ── BOOTSTRAP ──────────────────────────────────────────── */
+window.addEventListener('load',()=>{const game=new Game(document.getElementById('arena'));new UI(game);});
 </script>
 </body>
 </html>
