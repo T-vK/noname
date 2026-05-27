@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bayblade Arena 2D</title>
+  <title>Blade Arena</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -11,24 +11,25 @@
       background: #07071a;
       color: #d8d8f0;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
+    /* ── Header ─────────────────────────────────── */
     header {
       width: 100%;
-      padding: 10px 24px;
+      padding: 8px 14px;
       background: linear-gradient(90deg, #0e0e2a, #141430);
       border-bottom: 1px solid #2a2a55;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
+      flex-shrink: 0;
     }
-
     h1 {
-      font-size: 1.35rem;
+      font-size: 1.1rem;
       font-weight: 800;
       letter-spacing: 3px;
       text-transform: uppercase;
@@ -37,161 +38,155 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-
     #state-label {
       margin-left: auto;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: #6666aa;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
 
+    /* ── Main layout (mobile-first: column) ─────── */
     #main {
       display: flex;
-      gap: 16px;
-      padding: 14px;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
       width: 100%;
-      max-width: 1180px;
+      align-items: stretch;
     }
 
-    /* ── canvas ── */
+    /* ── Canvas ─────────────────────────────────── */
     #canvas-wrap {
       position: relative;
-      flex-shrink: 0;
+      width: 100%;
     }
-
     canvas {
       display: block;
-      border-radius: 14px;
-      box-shadow: 0 0 60px rgba(80, 100, 255, 0.12), 0 0 0 1px #1a1a44;
+      width: 100%;
+      aspect-ratio: 1;
+      max-width: 640px;
+      margin: 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 0 50px rgba(80,100,255,0.12), 0 0 0 1px #1a1a44;
     }
 
+    /* ── Winner overlay ──────────────────────────── */
     #winner-overlay {
       position: absolute;
       inset: 0;
-      border-radius: 14px;
-      background: rgba(4, 4, 18, 0.80);
+      border-radius: 12px;
+      background: rgba(4,4,18,0.80);
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       backdrop-filter: blur(3px);
     }
     #winner-overlay.visible { display: flex; }
     #winner-text {
-      font-size: 2.1rem;
+      font-size: 1.8rem;
       font-weight: 900;
       letter-spacing: 2px;
       text-transform: uppercase;
       text-shadow: 0 0 40px currentColor;
     }
-    #winner-sub { font-size: 0.88rem; color: #9999cc; }
+    #winner-sub { font-size: 0.8rem; color: #9999cc; }
 
-    /* ── sidebar ── */
+    /* ── Sidebar (bottom on mobile) ─────────────── */
     #sidebar {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      min-width: 235px;
-      max-width: 275px;
+      gap: 8px;
+      width: 100%;
     }
 
+    /* ── Panel ───────────────────────────────────── */
     .panel {
       background: #0d0d22;
       border: 1px solid #252545;
       border-radius: 10px;
-      padding: 13px;
+      padding: 10px 12px;
     }
-
     .panel-title {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 1.8px;
       color: #5555aa;
-      margin-bottom: 11px;
+      margin-bottom: 8px;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    /* ── bay card ── */
+    /* ── Fighter cards (HORIZONTAL row on mobile) ── */
+    #bay-cards {
+      display: flex;
+      gap: 6px;
+    }
     .bay-card {
+      flex: 1;
+      min-width: 0;
       border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 9px;
+      padding: 8px;
       border: 1px solid transparent;
     }
-    .bay-card:last-child { margin-bottom: 0; }
+    .bay-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .bay-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .bay-name { font-size: 0.75rem; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bay-icon { font-size: 0.8rem; flex-shrink: 0; }
 
-    .bay-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .bay-dot    { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .bay-name   { font-size: 0.85rem; font-weight: 700; flex: 1; }
-    .bay-icon   { font-size: 0.9rem; }
+    .hp-track { background: #181830; border-radius: 4px; height: 5px; overflow: hidden; margin-bottom: 2px; }
+    .hp-fill  { height: 100%; border-radius: 4px; transition: width 0.12s, background 0.4s; }
+    .hp-text  { font-size: 0.62rem; color: #7777aa; margin-bottom: 5px; }
 
-    .hp-track { background: #181830; border-radius: 5px; height: 6px; overflow: hidden; margin-bottom: 3px; }
-    .hp-fill  { height: 100%; border-radius: 5px; transition: width 0.12s, background 0.4s; }
-    .hp-text  { font-size: 0.7rem; color: #7777aa; margin-bottom: 6px; }
-
-    .cd-row   { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
-    .cd-label { font-size: 0.67rem; color: #6666aa; width: 50px; flex-shrink: 0; }
+    .cd-row   { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+    .cd-label { font-size: 0.6rem; color: #6666aa; flex-shrink: 0; }
     .cd-track { flex: 1; background: #181830; border-radius: 3px; height: 3px; overflow: hidden; }
     .cd-fill  { height: 100%; border-radius: 3px; transition: width 0.08s; }
 
-    .ability-select {
-      width: 100%;
-      background: #131330;
-      border: 1px solid #333366;
-      border-radius: 6px;
-      color: #d0d0f8;
-      padding: 5px 8px;
-      font-size: 0.77rem;
-      cursor: pointer;
-      outline: none;
-      margin-bottom: 7px;
-    }
-    .ability-select:focus    { border-color: #5577cc; }
-    .ability-select:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .status-row { display: flex; flex-wrap: wrap; gap: 3px; min-height: 18px; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 3px; min-height: 16px; }
     .chip {
-      font-size: 0.66rem;
-      padding: 2px 6px;
-      border-radius: 10px;
+      font-size: 0.58rem;
+      padding: 1px 5px;
+      border-radius: 8px;
       font-weight: 600;
       white-space: nowrap;
     }
 
-    /* ── controls ── */
-    .ctrl-row { display: flex; gap: 7px; }
+    /* ── Controls ─────────────────────────────────── */
+    .ctrl-row { display: flex; gap: 6px; }
     button {
       flex: 1;
-      padding: 9px 12px;
+      padding: 8px 10px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
       transition: opacity 0.15s, transform 0.1s;
     }
     button:hover   { opacity: 0.88; transform: translateY(-1px); }
     button:active  { transform: translateY(0); }
     button:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
-
     #btn-start { background: linear-gradient(135deg, #4455ee, #8844ee); color: #fff; }
-    #btn-reset { background: #1e1e40; color: #9999cc; flex: 0 0 auto; padding: 9px 11px; }
+    #btn-reset { background: #1e1e40; color: #9999cc; flex: 0 0 auto; padding: 8px 11px; }
 
-    /* ── config panel ── */
+    /* ── Config panel ─────────────────────────────── */
     .cfg-toggle-btn {
       margin-left: auto;
       background: transparent;
       border: none;
       color: #5555aa;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       cursor: pointer;
       padding: 0;
       font-weight: 700;
@@ -200,45 +195,110 @@
     }
     .cfg-toggle-btn:hover { color: #8888cc; transform: none; }
 
-    #config-body { display: none; margin-top: 4px; }
+    #config-body { display: none; margin-top: 6px; }
     #config-body.open { display: block; }
 
     .cfg-section {
-      font-size: 0.67rem;
+      font-size: 0.62rem;
       color: #5555aa;
       text-transform: uppercase;
       letter-spacing: 1.2px;
-      margin: 10px 0 6px;
+      margin: 8px 0 5px;
       font-weight: 700;
     }
-    .cfg-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .cfg-label { font-size: 0.71rem; color: #8888bb; width: 78px; flex-shrink: 0; }
-    .cfg-slider {
-      flex: 1;
-      accent-color: #5577cc;
-      height: 4px;
-      cursor: pointer;
-    }
-    .cfg-val { font-size: 0.7rem; color: #aaaadd; width: 38px; text-align: right; flex-shrink: 0; }
+    .cfg-row  { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .cfg-label { font-size: 0.68rem; color: #8888bb; width: 74px; flex-shrink: 0; }
+    .cfg-slider { flex: 1; accent-color: #5577cc; cursor: pointer; }
+    .cfg-val  { font-size: 0.68rem; color: #aaaadd; width: 36px; text-align: right; flex-shrink: 0; }
 
-    /* ── legend ── */
-    .legend-entry { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 9px; }
+    /* Ability selects inside config */
+    .cfg-ability-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    .cfg-ability-label {
+      font-size: 0.68rem;
+      color: #8888bb;
+      width: 74px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .ability-select {
+      flex: 1;
+      background: #131330;
+      border: 1px solid #333366;
+      border-radius: 6px;
+      color: #d0d0f8;
+      padding: 4px 7px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      outline: none;
+    }
+    .ability-select:focus    { border-color: #5577cc; }
+    .ability-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Legend (hidden on mobile by default) ─────── */
+    #legend-panel { display: none; }
+
+    .legend-entry { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
     .legend-entry:last-child { margin-bottom: 0; }
     .legend-icon-box {
-      width: 26px; height: 26px;
-      border-radius: 6px;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.95rem;
+      width: 24px; height: 24px; border-radius: 5px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
     }
-    .legend-name { font-weight: 700; color: #ccccee; margin-bottom: 2px; font-size: 0.78rem; }
-    .legend-desc { color: #7777aa; font-size: 0.69rem; line-height: 1.35; }
+    .legend-name { font-weight: 700; color: #ccccee; margin-bottom: 1px; font-size: 0.72rem; }
+    .legend-desc { color: #7777aa; font-size: 0.65rem; line-height: 1.3; }
+
+    /* ── Desktop layout (side by side) ───────────── */
+    @media (min-width: 820px) {
+      header { padding: 10px 24px; }
+      h1 { font-size: 1.35rem; }
+
+      #main {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 14px;
+        gap: 16px;
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+
+      #canvas-wrap { flex-shrink: 0; width: auto; }
+
+      canvas {
+        width: 640px;
+        aspect-ratio: unset;
+        height: 640px;
+      }
+
+      #sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        min-width: 240px;
+      }
+
+      /* Cards vertical again on desktop */
+      #bay-cards { flex-direction: column; gap: 8px; }
+      .bay-card  { padding: 10px; }
+      .bay-name  { font-size: 0.85rem; }
+      .bay-icon  { font-size: 0.9rem; }
+      .hp-text   { font-size: 0.7rem; }
+      .chip      { font-size: 0.66rem; padding: 2px 6px; }
+
+      #legend-panel { display: block; }
+
+      .panel { padding: 13px; }
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>⚡ Bayblade Arena</h1>
+  <h1>⚡ Blade Arena</h1>
   <div id="state-label">Ready</div>
 </header>
 
@@ -247,21 +307,12 @@
     <canvas id="arena" width="640" height="640"></canvas>
     <div id="winner-overlay">
       <div id="winner-text">—</div>
-      <div id="winner-sub">Click Play Again to restart</div>
+      <div id="winner-sub">Tap Play Again to restart</div>
     </div>
   </div>
 
   <div id="sidebar">
-    <!-- Config panel -->
-    <div class="panel">
-      <div class="panel-title">
-        ⚙ Config
-        <button class="cfg-toggle-btn" id="cfg-toggle">▼ show</button>
-      </div>
-      <div id="config-body"></div>
-    </div>
-
-    <!-- Bay cards -->
+    <!-- Fighter cards -->
     <div class="panel">
       <div class="panel-title">Fighters</div>
       <div id="bay-cards"></div>
@@ -271,13 +322,22 @@
     <div class="panel">
       <div class="panel-title">Controls</div>
       <div class="ctrl-row">
-        <button id="btn-start">▶ Start Battle</button>
+        <button id="btn-start">▶ Start</button>
         <button id="btn-reset" title="Reset">↺</button>
       </div>
     </div>
 
-    <!-- Ability guide -->
+    <!-- Config (ability selects + sliders) -->
     <div class="panel">
+      <div class="panel-title">
+        ⚙ Setup
+        <button class="cfg-toggle-btn" id="cfg-toggle">▼ show</button>
+      </div>
+      <div id="config-body"></div>
+    </div>
+
+    <!-- Legend (desktop only) -->
+    <div class="panel" id="legend-panel">
       <div class="panel-title">Ability Guide</div>
       <div id="ability-legend"></div>
     </div>
@@ -288,41 +348,34 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════
-   GLOBAL GAME CONFIG  (read by ability factories)
+   GAME CONFIG
 ═══════════════════════════════════════════════════ */
-
 const GameConfig = {
   health:           200,
   speedMult:        1.0,
-  // Harpoon
-  harpoonBounces:   10,
+  harpoonBounces:   14,
   harpoonCooldown:  4.5,
   harpoonDamage:    15,
   harpoonSlam:      40,
   harpoonSpeed:     500,
   harpoonRetract:   370,
-  // Parasite
-  parasiteDPS:      3,
+  parasiteDPS:      2.5,
   maxParasites:     9,
   parasiteCooldown: 0.7,
-  // Blade Storm
   stormDamage:      28,
   stormRange:       130,
   stormCooldown:    5,
-  // Mine
-  mineDamage:       45,
-  maxMines:         5,
-  mineCooldown:     2.2,
-  mineArmDelay:     0.8,
-  mineTriggerR:     34,
-  // Audio
+  mineDamage:       65,
+  maxMines:         7,
+  mineCooldown:     2.0,
+  mineArmDelay:     0.35,
+  mineTriggerR:     42,
   volume:           0.65,
 };
 
 /* ═══════════════════════════════════════════════════
    MATH
 ═══════════════════════════════════════════════════ */
-
 class Vec2 {
   constructor(x = 0, y = 0) { this.x = x; this.y = y; }
   add(v)    { return new Vec2(this.x + v.x, this.y + v.y); }
@@ -330,10 +383,7 @@ class Vec2 {
   scale(s)  { return new Vec2(this.x * s,   this.y * s);   }
   dot(v)    { return this.x * v.x + this.y * v.y; }
   len()     { return Math.sqrt(this.x * this.x + this.y * this.y); }
-  normalize() {
-    const l = this.len();
-    return l > 1e-9 ? this.scale(1 / l) : new Vec2(1, 0);
-  }
+  normalize() { const l = this.len(); return l > 1e-9 ? this.scale(1/l) : new Vec2(1,0); }
   reflect(n)  { return this.sub(n.scale(2 * this.dot(n))); }
   distTo(v)   { return this.sub(v).len(); }
   clone()     { return new Vec2(this.x, this.y); }
@@ -350,20 +400,15 @@ const rng = {
 };
 
 /* ═══════════════════════════════════════════════════
-   PARTICLE SYSTEM
+   PARTICLES
 ═══════════════════════════════════════════════════ */
-
 class Particle {
   constructor({ pos, vel, color, life, size, alpha = 1 }) {
-    this.pos   = pos.clone();
-    this.vel   = vel.clone();
-    this.color = color;
-    this.life  = life;
-    this.max   = life;
-    this.size  = size;
-    this.alpha = alpha;
+    this.pos = pos.clone(); this.vel = vel.clone();
+    this.color = color; this.life = life; this.max = life;
+    this.size = size; this.alpha = alpha;
   }
-  get t()    { return this.life / this.max; }
+  get t() { return this.life / this.max; }
   get alive() { return this.life > 0; }
   update(dt) {
     this.pos  = this.pos.add(this.vel.scale(dt));
@@ -382,7 +427,6 @@ class Particle {
 
 class ParticleSystem {
   constructor() { this.list = []; }
-
   emit(count, opts) {
     for (let i = 0; i < count; i++) {
       const angle = opts.angle !== undefined
@@ -399,25 +443,18 @@ class ParticleSystem {
       }));
     }
   }
-
   update(dt) { this.list = this.list.filter(p => { p.update(dt); return p.alive; }); }
   render(ctx) { this.list.forEach(p => p.render(ctx)); }
 }
 
 /* ═══════════════════════════════════════════════════
-   AUDIO ENGINE  (Web Audio API — zero external files)
-   All sounds are synthesized procedurally.
+   AUDIO ENGINE  (Web Audio API, zero external files)
 ═══════════════════════════════════════════════════ */
-
 class AudioEngine {
   constructor() {
-    this._ctx    = null;
-    this._master = null;
-    this._nbuf   = null;   // reusable white-noise buffer
-    this._last   = {};     // throttle timestamps
+    this._ctx = null; this._master = null; this._nbuf = null; this._last = {};
     this._tryInit();
   }
-
   _tryInit() {
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -428,23 +465,16 @@ class AudioEngine {
       this._master.connect(this._ctx.destination);
     } catch (_) { this._ctx = null; }
   }
-
   resume()      { if (this._ctx?.state === 'suspended') this._ctx.resume(); }
   setVolume(v)  { if (this._master) this._master.gain.value = v; }
   get enabled() { return !!this._ctx; }
-
-  // Rate-gate: returns false if called again within minGap ms
-  _gate(key, minGap = 60) {
+  _gate(key, ms = 60) {
     const now = Date.now();
-    if (now - (this._last[key] ?? 0) < minGap) return false;
-    this._last[key] = now;
-    return true;
+    if (now - (this._last[key] ?? 0) < ms) return false;
+    this._last[key] = now; return true;
   }
-
-  // Build an ADSR gain node and connect it to dest (default: master)
   _env(peak, atk, sus, rel, dest) {
-    const g = this._ctx.createGain();
-    const t = this._ctx.currentTime;
+    const g = this._ctx.createGain(), t = this._ctx.currentTime;
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(peak, t + atk);
     if (sus > 0) g.gain.setValueAtTime(peak, t + atk + sus);
@@ -452,283 +482,128 @@ class AudioEngine {
     g.connect(dest ?? this._master);
     return [g, t];
   }
-
-  // Oscillator with optional frequency sweep
-  _osc(type, freq0, freq1, peak, atk, sus, rel, dest) {
+  _osc(type, f0, f1, peak, atk, sus, rel, dest) {
     if (!this._ctx) return;
     const [g, t] = this._env(peak, atk, sus, rel, dest);
     const o = this._ctx.createOscillator();
-    o.type = type;
-    o.frequency.setValueAtTime(freq0, t);
-    if (freq1 != null)
-      o.frequency.exponentialRampToValueAtTime(freq1, t + atk + sus + rel);
-    o.connect(g);
-    o.start(t);
-    o.stop(t + atk + sus + rel + 0.06);
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1 != null) o.frequency.exponentialRampToValueAtTime(f1, t + atk + sus + rel);
+    o.connect(g); o.start(t); o.stop(t + atk + sus + rel + 0.06);
   }
-
-  // Cached 1-second white-noise buffer
   _noiseBuffer() {
     if (!this._nbuf || this._nbuf.sampleRate !== this._ctx.sampleRate) {
-      const sr  = this._ctx.sampleRate;
-      const buf = this._ctx.createBuffer(1, sr, sr);
-      const d   = buf.getChannelData(0);
+      const sr = this._ctx.sampleRate, buf = this._ctx.createBuffer(1, sr, sr), d = buf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       this._nbuf = buf;
     }
     return this._nbuf;
   }
-
-  // Noise burst with optional band-pass
   _noise(peak, atk, sus, rel, bpFreq, bpQ = 3, dest) {
     if (!this._ctx) return;
     const [g, t] = this._env(peak, atk, sus, rel, dest);
     const src = this._ctx.createBufferSource();
-    src.buffer = this._noiseBuffer();
-    src.loop   = true;
-    let node   = src;
+    src.buffer = this._noiseBuffer(); src.loop = true;
+    let node = src;
     if (bpFreq) {
       const f = this._ctx.createBiquadFilter();
-      f.type  = 'bandpass';
-      f.frequency.value = bpFreq;
-      f.Q.value         = bpQ;
-      src.connect(f);
-      node = f;
+      f.type = 'bandpass'; f.frequency.value = bpFreq; f.Q.value = bpQ;
+      src.connect(f); node = f;
     }
-    node.connect(g);
-    src.start(t);
-    src.stop(t + atk + sus + rel + 0.12);
+    node.connect(g); src.start(t); src.stop(t + atk + sus + rel + 0.12);
   }
-
-  // ── Sound library ──────────────────────────────────────────────
-
-  harpoonFire() {
-    if (!this._ctx || !this._gate('hFire', 200)) return;
-    // Metallic clank + downward whoosh
-    this._noise(0.3,  0.003, 0.01, 0.07, 3200, 9);
-    this._osc('sawtooth', 920, 180, 0.18, 0.004, 0, 0.22, null);
-  }
-
-  harpoonBounce() {
-    if (!this._ctx || !this._gate('hBounce', 45)) return;
-    const freq = 520 + Math.random() * 880;
-    this._osc('triangle', freq, freq * 0.45, 0.16, 0.002, 0, 0.11, null);
-    this._noise(0.07, 0.001, 0, 0.045, freq * 0.6, 6);
-  }
-
-  harpoonHit() {
-    if (!this._ctx) return;
-    // Electric zap descending + noise thud
-    this._osc('square', 1400, 100, 0.24, 0.003, 0, 0.19, null);
-    this._noise(0.35, 0.003, 0.02, 0.14, 155, 2);
-  }
-
-  harpoonRetract() {
-    if (!this._ctx) return;
-    // Rising mechanical whirr (chain reeling in)
-    this._osc('sawtooth', 160, 460, 0.09, 0.02, 0.55, 0.2, null);
-    this._noise(0.05, 0.01, 0.45, 0.18, 380, 4);
-  }
-
-  harpoonSlam() {
-    if (!this._ctx) return;
-    // Sub-bass thump + full noise crash + high crack
-    this._osc('sine',     140,  22, 0.6,  0.003, 0, 0.55, null);
-    this._noise(0.6,  0.004, 0.08, 0.38, null);
-    this._noise(0.28, 0.002, 0,    0.11, 3600,   6);
-  }
-
+  harpoonFire()    { if (!this._ctx || !this._gate('hFire',200)) return; this._noise(0.3,0.003,0.01,0.07,3200,9); this._osc('sawtooth',920,180,0.18,0.004,0,0.22,null); }
+  harpoonBounce()  { if (!this._ctx || !this._gate('hBounce',45)) return; const f=520+Math.random()*880; this._osc('triangle',f,f*0.45,0.16,0.002,0,0.11,null); this._noise(0.07,0.001,0,0.045,f*0.6,6); }
+  harpoonHit()     { if (!this._ctx) return; this._osc('square',1400,100,0.24,0.003,0,0.19,null); this._noise(0.35,0.003,0.02,0.14,155,2); }
+  harpoonRetract() { if (!this._ctx) return; this._osc('sawtooth',160,460,0.09,0.02,0.55,0.2,null); this._noise(0.05,0.01,0.45,0.18,380,4); }
+  harpoonSlam()    { if (!this._ctx) return; this._osc('sine',140,22,0.6,0.003,0,0.55,null); this._noise(0.6,0.004,0.08,0.38,null); this._noise(0.28,0.002,0,0.11,3600,6); }
   parasiteInfect() {
-    if (!this._ctx || !this._gate('pInfect', 100)) return;
-    // Organic buzzy blop with LFO wobble
-    const t   = this._ctx.currentTime;
-    const osc = this._ctx.createOscillator();
-    osc.type  = 'square';
-    osc.frequency.setValueAtTime(72, t);
-    const lfo = this._ctx.createOscillator();
-    lfo.frequency.value = 30;
-    const lg  = this._ctx.createGain();
-    lg.gain.value = 48;
-    lfo.connect(lg);
-    lg.connect(osc.frequency);
-    const [g] = this._env(0.18, 0.008, 0, 0.28, null);
-    osc.connect(g);
-    osc.start(t); osc.stop(t + 0.36);
-    lfo.start(t); lfo.stop(t + 0.36);
-    this._osc('sine', 330, 175, 0.09, 0.005, 0, 0.18, null);
+    if (!this._ctx || !this._gate('pInfect',100)) return;
+    const t=this._ctx.currentTime, osc=this._ctx.createOscillator();
+    osc.type='square'; osc.frequency.setValueAtTime(72,t);
+    const lfo=this._ctx.createOscillator(), lg=this._ctx.createGain();
+    lfo.frequency.value=30; lg.gain.value=48; lfo.connect(lg); lg.connect(osc.frequency);
+    const [g]=this._env(0.18,0.008,0,0.28,null); osc.connect(g);
+    osc.start(t); osc.stop(t+0.36); lfo.start(t); lfo.stop(t+0.36);
+    this._osc('sine',330,175,0.09,0.005,0,0.18,null);
   }
-
-  poisonTick() {
-    if (!this._ctx || !this._gate('pTick', 220)) return;
-    this._noise(0.04, 0.003, 0.01, 0.08, 950, 11);
-    this._osc('sine', 460, 290, 0.03, 0.003, 0, 0.1, null);
-  }
-
-  bladeStorm() {
-    if (!this._ctx) return;
-    // Dual-oscillator expanding ring whoosh
-    this._osc('sawtooth', 270, 820, 0.22, 0.02, 0.1, 0.38, null);
-    this._osc('sawtooth', 135, 410, 0.12, 0.02, 0.1, 0.38, null);
-    this._noise(0.18, 0.01, 0.15, 0.28, 580, 3);
-  }
-
-  mineLay() {
-    if (!this._ctx || !this._gate('mLay', 160)) return;
-    this._noise(0.11, 0.002, 0, 0.04, 2400, 13);          // mechanical click
-    this._osc('sine', 1100, 880, 0.09, 0.004, 0.05, 0.13, null); // deployment beep
-  }
-
-  mineArmed() {
-    if (!this._ctx || !this._gate('mArmed', 180)) return;
-    this._osc('sine', 900, 1120, 0.07, 0.003, 0.02, 0.09, null);
-  }
-
-  mineExplode() {
-    if (!this._ctx) return;
-    // Sub-bass kick + full noise explosion + distant rumble + high crack
-    this._osc('sine',  92,  18, 0.68, 0.003, 0,    0.68, null);
-    this._noise(0.78,  0.004, 0.14, 0.58, null);
-    this._noise(0.38,  0.002, 0,    0.14, 2900, 5);
-    this._noise(0.22,  0.01,  0.42, 0.52, 95,   1);
-  }
-
-  collision(intensity = 50) {
-    if (!this._ctx || !this._gate('col', 75)) return;
-    const peak = Math.min(0.3, 0.06 + intensity * 0.0008);
-    const freq = 680 + Math.random() * 520;
-    this._noise(peak,      0.002, 0, 0.07, freq, 7);
-    this._osc('triangle', 210 + Math.random() * 190, 75, peak * 0.55, 0.002, 0, 0.08, null);
-  }
-
-  baybladeKO() {
-    if (!this._ctx) return;
-    // Spinning-down whine + crash
-    this._osc('sawtooth', 720, 32, 0.32, 0.005, 0,    1.25, null);
-    this._noise(0.52,  0.004, 0.28, 0.62, null);
-    this._noise(0.26,  0.002, 0,    0.13, 3100, 5);
-  }
-
-  battleStart() {
-    if (!this._ctx) return;
-    this._osc('sawtooth', 85, 660, 0.34, 0.04, 0, 0.42, null);
-    setTimeout(() => {
-      if (!this._ctx) return;
-      this._noise(0.42, 0.003, 0.07, 0.28, null);
-      this._osc('sine', 230, 105, 0.32, 0.003, 0.14, 0.32, null);
-    }, 370);
-  }
-
-  winnerFanfare() {
-    if (!this._ctx) return;
-    [330, 415, 523, 659].forEach((freq, i) => {
-      setTimeout(() => {
-        this._osc('sine',     freq,     null, 0.22, 0.01, 0.12, 0.22, null);
-        this._osc('triangle', freq * 2, null, 0.10, 0.01, 0.06, 0.16, null);
-      }, i * 135);
-    });
-  }
+  poisonTick()    { if (!this._ctx || !this._gate('pTick',220)) return; this._noise(0.04,0.003,0.01,0.08,950,11); this._osc('sine',460,290,0.03,0.003,0,0.1,null); }
+  bladeStorm()    { if (!this._ctx) return; this._osc('sawtooth',270,820,0.22,0.02,0.1,0.38,null); this._osc('sawtooth',135,410,0.12,0.02,0.1,0.38,null); this._noise(0.18,0.01,0.15,0.28,580,3); }
+  mineLay()       { if (!this._ctx || !this._gate('mLay',160)) return; this._noise(0.11,0.002,0,0.04,2400,13); this._osc('sine',1100,880,0.09,0.004,0.05,0.13,null); }
+  mineArmed()     { if (!this._ctx || !this._gate('mArmed',180)) return; this._osc('sine',900,1120,0.07,0.003,0.02,0.09,null); }
+  mineExplode()   { if (!this._ctx) return; this._osc('sine',92,18,0.68,0.003,0,0.68,null); this._noise(0.78,0.004,0.14,0.58,null); this._noise(0.38,0.002,0,0.14,2900,5); this._noise(0.22,0.01,0.42,0.52,95,1); }
+  collision(spd=50){ if (!this._ctx || !this._gate('col',75)) return; const p=Math.min(0.3,0.06+spd*0.0008),f=680+Math.random()*520; this._noise(p,0.002,0,0.07,f,7); this._osc('triangle',210+Math.random()*190,75,p*0.55,0.002,0,0.08,null); }
+  baybladeKO()    { if (!this._ctx) return; this._osc('sawtooth',720,32,0.32,0.005,0,1.25,null); this._noise(0.52,0.004,0.28,0.62,null); this._noise(0.26,0.002,0,0.13,3100,5); }
+  battleStart()   { if (!this._ctx) return; this._osc('sawtooth',85,660,0.34,0.04,0,0.42,null); setTimeout(()=>{ if(!this._ctx)return; this._noise(0.42,0.003,0.07,0.28,null); this._osc('sine',230,105,0.32,0.003,0.14,0.32,null); },370); }
+  winnerFanfare() { if (!this._ctx) return; [330,415,523,659].forEach((f,i)=>setTimeout(()=>{ this._osc('sine',f,null,0.22,0.01,0.12,0.22,null); this._osc('triangle',f*2,null,0.10,0.01,0.06,0.16,null); },i*135)); }
 }
-
 const SFX = new AudioEngine();
 
 /* ═══════════════════════════════════════════════════
    PROJECTILE BASE
 ═══════════════════════════════════════════════════ */
-
 class Projectile {
-  constructor(pos, vel, owner) {
-    this.pos    = pos.clone();
-    this.vel    = vel.clone();
-    this.owner  = owner;
-    this.active = true;
-    this.age    = 0;
-  }
-  update(_dt, _arena, _targets, _ps) {}
+  constructor(pos, vel, owner) { this.pos=pos.clone(); this.vel=vel.clone(); this.owner=owner; this.active=true; this.age=0; }
+  update(_dt,_arena,_targets,_ps) {}
   render(_ctx) {}
   onDeactivate() {}
 }
 
 /* ═══════════════════════════════════════════════════
    HARPOON PROJECTILE
-   - Fires in a random direction
-   - Records every wall-bounce waypoint into this.path[]
-   - On hit: retracts along the EXACT recorded path in reverse
-   - Rope rendered as a polyline through the path at all times
+   Random direction → bounces → hooks target →
+   retracts along exact recorded path → SLAM
 ═══════════════════════════════════════════════════ */
-
 class HarpoonProjectile extends Projectile {
   constructor(pos, vel, owner, cfg = {}) {
     super(pos, vel, owner);
-    this.maxBounces   = cfg.maxBounces   ?? 10;
-    this.maxAge       = cfg.maxAge       ?? 16;
-    this.hitDamage    = cfg.hitDamage    ?? 15;
-    this.slamDamage   = cfg.slamDamage   ?? 40;
-    this.retractSpeed = cfg.retractSpeed ?? 370;
-    this.bounces      = 0;
-
-    // path[0] = owner pos (updated live), path[1..n] = bounce waypoints
-    // During retraction path is frozen except path[0].
-    this.path         = [pos.clone()];
-
-    // Retraction state
-    this.attached     = null;   // Bayblade being dragged
-    this.retracting   = false;
-    this.retractIdx       = 0;    // current "from" index (counts down to 0 = SLAM)
-    this.retractPos       = null; // current world position of dragged target
-    this._retractSounded  = false;
+    this.maxBounces      = cfg.maxBounces   ?? 14;
+    this.maxAge          = cfg.maxAge       ?? 18;
+    this.hitDamage       = cfg.hitDamage    ?? 15;
+    this.slamDamage      = cfg.slamDamage   ?? 40;
+    this.retractSpeed    = cfg.retractSpeed ?? 370;
+    this.bounces         = 0;
+    this.path            = [pos.clone()]; // path[0] always = owner pos
+    this.attached        = null;
+    this.retracting      = false;
+    this.retractIdx      = 0;
+    this.retractPos      = null;
+    this._retractSounded = false;
   }
 
   update(dt, arena, targets, ps) {
+    this.age++;
+    this.age = this.age; // suppress unused
+    this.age -= 1;
     this.age += dt;
-    // Keep rope anchored to owner's current position
     this.path[0] = this.owner.pos.clone();
-
-    if (!this.retracting && this.age > this.maxAge) {
-      this.active = false;
-      return;
-    }
-    if (this.retracting) {
-      this._retract(dt, ps);
-    } else {
-      this._fly(dt, arena, targets, ps);
-    }
+    if (!this.retracting && this.age > this.maxAge) { this.active = false; return; }
+    if (this.retracting) this._retract(dt, ps);
+    else                 this._fly(dt, arena, targets, ps);
   }
 
   _fly(dt, arena, targets, ps) {
     this.pos = this.pos.add(this.vel.scale(dt));
-
-    // Circular wall bounce
     const fromCenter = this.pos.sub(arena.center);
     if (fromCenter.len() >= arena.radius - 5) {
-      const n    = fromCenter.normalize();
-      this.vel   = this.vel.reflect(n);
-      this.pos   = arena.center.add(n.scale(arena.radius - 6));
-      this.path.push(this.pos.clone()); // record waypoint
+      const n  = fromCenter.normalize();
+      this.vel = this.vel.reflect(n);
+      this.pos = arena.center.add(n.scale(arena.radius - 6));
+      this.path.push(this.pos.clone());
       this.bounces++;
       SFX.harpoonBounce();
-      ps.emit(7, {
-        pos: this.pos, color: ['#88aaff', '#ccddff', '#ffffff'],
-        speed: 75, minSize: 1, maxSize: 3, minLife: 0.15, maxLife: 0.4,
-      });
+      ps.emit(7, { pos:this.pos, color:['#88aaff','#ccddff','#ffffff'], speed:75, minSize:1, maxSize:3, minLife:0.15, maxLife:0.4 });
       if (this.bounces > this.maxBounces) { this.active = false; return; }
     }
-
-    // Target detection
     for (const t of targets) {
       if (t === this.owner || !t.alive || t.caughtBy) continue;
       if (this.pos.distTo(t.pos) < t.radius + 8) {
         t.takeDamage(this.hitDamage, 'harpoon', this.owner);
         SFX.harpoonHit();
-        this.attached   = t;
-        this.retracting = true;
-        t.caughtBy      = this;
-        this.path.push(this.pos.clone()); // final waypoint = hit point
+        this.attached = t; this.retracting = true; t.caughtBy = this;
+        this.path.push(this.pos.clone());
         this.retractIdx = this.path.length - 1;
         this.retractPos = this.pos.clone();
-        ps.emit(22, {
-          pos: t.pos, color: ['#88aaff', '#ffffff', '#ffdd88'],
-          speed: 210, minSize: 2, maxSize: 6, minLife: 0.25, maxLife: 0.65,
-        });
+        ps.emit(22, { pos:t.pos, color:['#88aaff','#ffffff','#ffdd88'], speed:210, minSize:2, maxSize:6, minLife:0.25, maxLife:0.65 });
         break;
       }
     }
@@ -737,246 +612,117 @@ class HarpoonProjectile extends Projectile {
   _retract(dt, ps) {
     if (!this.attached || !this.attached.alive) {
       if (this.attached) this.attached.caughtBy = null;
-      this.attached = null;
-      this.active   = false;
-      return;
+      this.attached = null; this.active = false; return;
     }
-
-    // Play reeling sound once when retraction begins
-    if (!this._retractSounded) {
-      SFX.harpoonRetract();
-      this._retractSounded = true;
-    }
-
+    if (!this._retractSounded) { SFX.harpoonRetract(); this._retractSounded = true; }
     if (this.retractIdx <= 0) {
-      // Arrived at owner — SLAM!
       SFX.harpoonSlam();
       this.attached.takeDamage(this.slamDamage, 'slam', this.owner);
       this.attached.vel      = this.retractPos.sub(this.owner.pos).normalize().scale(-200);
       this.attached.caughtBy = null;
-      ps.emit(45, {
-        pos: this.owner.pos,
-        color: ['#ffaa33', '#ff6633', '#ffffff', '#ffee77'],
-        speed: 340, minSize: 3, maxSize: 11, minLife: 0.35, maxLife: 1.1,
-      });
-      this.attached = null;
-      this.active   = false;
-      return;
+      ps.emit(45, { pos:this.owner.pos, color:['#ffaa33','#ff6633','#ffffff','#ffee77'], speed:340, minSize:3, maxSize:11, minLife:0.35, maxLife:1.1 });
+      this.attached = null; this.active = false; return;
     }
-
-    // Move retractPos toward path[retractIdx - 1]
     const nextWP = this.path[this.retractIdx - 1];
     const toNext = nextWP.sub(this.retractPos);
-    const dist   = toNext.len();
-    const move   = this.retractSpeed * dt;
-
-    if (move >= dist) {
-      this.retractPos = nextWP.clone();
-      this.retractIdx--;
-    } else {
-      this.retractPos = this.retractPos.add(toNext.normalize().scale(move));
-    }
+    const dist   = toNext.len(), move = this.retractSpeed * dt;
+    if (move >= dist) { this.retractPos = nextWP.clone(); this.retractIdx--; }
+    else               { this.retractPos = this.retractPos.add(toNext.normalize().scale(move)); }
     this.attached.pos = this.retractPos.clone();
   }
 
-  onDeactivate() {
-    if (this.attached) { this.attached.caughtBy = null; this.attached = null; }
-  }
+  onDeactivate() { if (this.attached) { this.attached.caughtBy = null; this.attached = null; } }
 
   _drawRope(ctx, points) {
     if (points.length < 2) return;
     ctx.save();
-    ctx.lineJoin = 'round';
-    ctx.lineCap  = 'round';
-
-    // Glow pass
-    ctx.strokeStyle = '#3355aa88';
-    ctx.lineWidth   = 6;
-    ctx.globalAlpha = 0.35;
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#3355aa88'; ctx.lineWidth = 6; ctx.globalAlpha = 0.35;
+    ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
     ctx.stroke();
-
-    // Chain links pass
-    ctx.strokeStyle = '#aaccff';
-    ctx.lineWidth   = 2;
-    ctx.setLineDash([9, 5]);
-    ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
+    ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 2; ctx.setLineDash([9,5]); ctx.globalAlpha = 0.9;
+    ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
     ctx.stroke();
     ctx.setLineDash([]);
-
-    // Waypoint nodes (wall bounce marks)
-    ctx.globalAlpha = 0.7;
-    ctx.fillStyle   = '#88aaff';
-    for (let i = 1; i < points.length - 1; i++) {
-      ctx.beginPath();
-      ctx.arc(points[i].x, points[i].y, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
+    ctx.globalAlpha = 0.7; ctx.fillStyle = '#88aaff';
+    for (let i = 1; i < points.length - 1; i++) { ctx.beginPath(); ctx.arc(points[i].x, points[i].y, 4, 0, Math.PI*2); ctx.fill(); }
     ctx.restore();
   }
 
   render(ctx) {
     if (!this.active) return;
-
     if (this.retracting && this.attached && this.retractPos) {
-      // Rope shrinks: owner → path[1..retractIdx-1] → retractPos
-      const pts = [
-        ...this.path.slice(0, this.retractIdx),
-        this.retractPos.clone(),
-      ];
-      this._drawRope(ctx, pts);
-      return;
+      this._drawRope(ctx, [...this.path.slice(0, this.retractIdx), this.retractPos.clone()]); return;
     }
-
-    // Flight rope: owner → bounce waypoints → tip
     this._drawRope(ctx, [...this.path, this.pos.clone()]);
-
-    // Tip glow
-    const g = ctx.createRadialGradient(this.pos.x, this.pos.y, 0, this.pos.x, this.pos.y, 13);
-    g.addColorStop(0, '#aaccff');
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, 13, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, 4, 0, Math.PI * 2);
-    ctx.fill();
+    const g = ctx.createRadialGradient(this.pos.x,this.pos.y,0,this.pos.x,this.pos.y,13);
+    g.addColorStop(0,'#aaccff'); g.addColorStop(1,'transparent');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,4,0,Math.PI*2); ctx.fill();
   }
 }
 
 /* ═══════════════════════════════════════════════════
-   MINE  (extends Projectile — stationary until triggered)
+   MINE  (stationary, arms after delay, AoE on trigger)
 ═══════════════════════════════════════════════════ */
-
 class Mine extends Projectile {
   constructor(pos, owner, cfg = {}) {
     super(pos, new Vec2(), owner);
-    this.radius    = 14;
-    this.triggerR  = cfg.mineTriggerR ?? 34;
-    this.damage    = cfg.mineDamage   ?? 45;
-    this.armDelay  = cfg.mineArmDelay ?? 0.8;
-    this.armed     = false;
-    this.phase     = Math.random() * Math.PI * 2;
-    this.maxAge    = 35;
+    this.radius   = 14;
+    this.triggerR = cfg.mineTriggerR ?? 42;
+    this.damage   = cfg.mineDamage   ?? 65;
+    this.armDelay = cfg.mineArmDelay ?? 0.35;
+    this.armed    = false;
+    this.phase    = Math.random() * Math.PI * 2;
+    this.maxAge   = 35;
   }
-
   update(dt, _arena, targets, ps) {
-    this.age   += dt;
-    this.phase += dt * 4;
+    this.age += dt; this.phase += dt * 4;
     if (this.age > this.maxAge) { this.active = false; return; }
-    if (!this.armed && this.age >= this.armDelay) {
-      this.armed = true;
-      SFX.mineArmed();
-    }
+    if (!this.armed && this.age >= this.armDelay) { this.armed = true; SFX.mineArmed(); }
     if (!this.armed) return;
-
     for (const t of targets) {
       if (t === this.owner || !t.alive) continue;
-      if (this.pos.distTo(t.pos) < this.triggerR + t.radius) {
-        this._explode(targets, ps);
-        return;
-      }
+      if (this.pos.distTo(t.pos) < this.triggerR + t.radius) { this._explode(targets, ps); return; }
     }
   }
-
   _explode(targets, ps) {
     SFX.mineExplode();
     for (const t of targets) {
       if (t === this.owner || !t.alive) continue;
-      const d      = this.pos.distTo(t.pos);
-      const aoeR   = this.triggerR + t.radius + 35;
+      const d = this.pos.distTo(t.pos), aoeR = this.triggerR + t.radius + 35;
       if (d >= aoeR) continue;
-      const factor = Math.max(0.25, 1 - d / (this.triggerR + 55));
-      t.takeDamage(this.damage * factor, 'mine', this.owner);
-      const away = t.pos.sub(this.pos).normalize().scale(380 * factor);
-      t.vel = t.vel.add(away);
+      const f = Math.max(0.25, 1 - d / (this.triggerR + 55));
+      t.takeDamage(this.damage * f, 'mine', this.owner);
+      t.vel = t.vel.add(t.pos.sub(this.pos).normalize().scale(380 * f));
     }
-    // Explosion particles
-    ps.emit(60, {
-      pos: this.pos,
-      color: ['#ff6600', '#ff3300', '#ffaa44', '#ffee88', '#ffffff', '#ff8800'],
-      speed: 310, minSize: 3, maxSize: 13, minLife: 0.45, maxLife: 1.4,
-    });
-    ps.emit(22, {
-      pos: this.pos, color: ['#ffdd88', '#ffffff'],
-      speed: 90, minSize: 6, maxSize: 16, minLife: 0.12, maxLife: 0.3, alpha: 0.65,
-    });
+    ps.emit(60, { pos:this.pos, color:['#ff6600','#ff3300','#ffaa44','#ffee88','#ffffff','#ff8800'], speed:310, minSize:3, maxSize:13, minLife:0.45, maxLife:1.4 });
+    ps.emit(22, { pos:this.pos, color:['#ffdd88','#ffffff'], speed:90, minSize:6, maxSize:16, minLife:0.12, maxLife:0.3, alpha:0.65 });
     this.active = false;
   }
-
-  onDeactivate() {
-    if (this._abilityRef) {
-      this._abilityRef._activeMineCount = Math.max(0, this._abilityRef._activeMineCount - 1);
-    }
-  }
-
+  onDeactivate() { if (this._abilityRef) this._abilityRef._activeMineCount = Math.max(0, this._abilityRef._activeMineCount - 1); }
   render(ctx) {
     if (!this.active) return;
-    const { x, y } = this.pos;
-    const pulse  = 0.85 + 0.15 * Math.sin(this.phase);
-    const alpha  = this.armed ? 1 : 0.4 + 0.3 * Math.sin(this.phase * 2.5);
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-
-    // Trigger radius warning ring
+    const {x,y} = this.pos, pulse = 0.85 + 0.15*Math.sin(this.phase), alpha = this.armed ? 1 : 0.4+0.3*Math.sin(this.phase*2.5);
+    ctx.save(); ctx.globalAlpha = alpha;
     if (this.armed) {
-      ctx.strokeStyle = '#ff660066';
-      ctx.lineWidth   = 1.5;
-      ctx.setLineDash([4, 5]);
-      ctx.globalAlpha = alpha * (0.25 + 0.25 * Math.sin(this.phase * 1.6));
-      ctx.beginPath();
-      ctx.arc(x, y, this.triggerR, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.strokeStyle='#ff660066'; ctx.lineWidth=1.5; ctx.setLineDash([4,5]);
+      ctx.globalAlpha = alpha*(0.25+0.25*Math.sin(this.phase*1.6));
+      ctx.beginPath(); ctx.arc(x,y,this.triggerR,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
     }
-
-    // Outer glow
-    ctx.globalAlpha = alpha * 0.5;
-    const glow = ctx.createRadialGradient(x, y, 0, x, y, this.radius * 2.8);
-    glow.addColorStop(0, '#ff6600bb');
-    glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow;
+    ctx.globalAlpha = alpha*0.5;
+    const glow = ctx.createRadialGradient(x,y,0,x,y,this.radius*2.8);
+    glow.addColorStop(0,'#ff6600bb'); glow.addColorStop(1,'transparent');
+    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(x,y,this.radius*2.8,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha = alpha; ctx.fillStyle = this.armed ? '#882200' : '#554400';
     ctx.beginPath();
-    ctx.arc(x, y, this.radius * 2.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Spiky body
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle   = this.armed ? '#882200' : '#554400';
-    ctx.beginPath();
-    const spikes = 8;
-    for (let i = 0; i <= spikes; i++) {
-      const a = (i / spikes) * Math.PI * 2;
-      const r = i % 2 === 0 ? this.radius * pulse : this.radius * 0.52;
-      const px = x + Math.cos(a) * r;
-      const py = y + Math.sin(a) * r;
-      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.fill();
-
-    // Inner glow
+    for (let i=0;i<=8;i++) { const a=(i/8)*Math.PI*2,r=i%2===0?this.radius*pulse:this.radius*0.52,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); }
+    ctx.closePath(); ctx.fill();
     ctx.fillStyle = this.armed ? '#ff6600' : '#776600';
-    ctx.beginPath();
-    ctx.arc(x, y, this.radius * 0.45 * pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Center dot
-    ctx.fillStyle = '#ffee88';
-    ctx.beginPath();
-    ctx.arc(x, y, this.radius * 0.16, 0, Math.PI * 2);
-    ctx.fill();
-
+    ctx.beginPath(); ctx.arc(x,y,this.radius*0.45*pulse,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ffee88'; ctx.beginPath(); ctx.arc(x,y,this.radius*0.16,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 }
@@ -984,862 +730,452 @@ class Mine extends Projectile {
 /* ═══════════════════════════════════════════════════
    BLADE STORM RING
 ═══════════════════════════════════════════════════ */
-
 class StormRing extends Projectile {
-  constructor(pos, owner, cfg = {}) {
+  constructor(pos, owner, cfg={}) {
     super(pos, new Vec2(), owner);
-    this.maxRadius  = cfg.range  ?? 130;
-    this.currentR   = owner.radius;
-    this.expandRate = 290;
-    this.damage     = cfg.damage ?? 28;
-    this.hit        = new Set();
-    this.maxAge     = this.maxRadius / this.expandRate + 0.05;
+    this.maxRadius=cfg.range??130; this.currentR=owner.radius; this.expandRate=290;
+    this.damage=cfg.damage??28; this.hit=new Set(); this.maxAge=this.maxRadius/this.expandRate+0.05;
   }
-
   update(dt, _arena, targets, ps) {
-    this.age      += dt;
-    this.currentR += this.expandRate * dt;
+    this.age+=dt; this.currentR+=this.expandRate*dt;
     for (const t of targets) {
-      if (t === this.owner || !t.alive || this.hit.has(t)) continue;
-      const d = t.pos.distTo(this.pos);
-      if (d <= this.currentR + t.radius && d >= this.currentR - t.radius - 10) {
-        t.takeDamage(this.damage, 'storm', this.owner);
-        this.hit.add(t);
-        ps.emit(14, {
-          pos: t.pos, color: ['#ffaa00', '#ff6600', '#ffee44'],
-          speed: 180, minSize: 2, maxSize: 6, minLife: 0.2, maxLife: 0.55,
-        });
+      if (t===this.owner||!t.alive||this.hit.has(t)) continue;
+      const d=t.pos.distTo(this.pos);
+      if (d<=this.currentR+t.radius&&d>=this.currentR-t.radius-10) {
+        t.takeDamage(this.damage,'storm',this.owner); this.hit.add(t);
+        ps.emit(14,{pos:t.pos,color:['#ffaa00','#ff6600','#ffee44'],speed:180,minSize:2,maxSize:6,minLife:0.2,maxLife:0.55});
       }
     }
-    if (this.age >= this.maxAge) this.active = false;
+    if (this.age>=this.maxAge) this.active=false;
   }
-
   render(ctx) {
     if (!this.active) return;
-    const a = 1 - this.age / this.maxAge;
-    ctx.save();
-    ctx.globalAlpha = a * 0.75;
-    ctx.strokeStyle = '#ffaa00';
-    ctx.lineWidth   = 5;
-    ctx.shadowColor = '#ffaa00';
-    ctx.shadowBlur  = 14;
-    ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, this.currentR, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+    ctx.save(); ctx.globalAlpha=(1-this.age/this.maxAge)*0.75; ctx.strokeStyle='#ffaa00'; ctx.lineWidth=5; ctx.shadowColor='#ffaa00'; ctx.shadowBlur=14;
+    ctx.beginPath(); ctx.arc(this.pos.x,this.pos.y,this.currentR,0,Math.PI*2); ctx.stroke(); ctx.restore();
   }
 }
 
 /* ═══════════════════════════════════════════════════
-   PARASITE  (orbiting visual)
+   PARASITE (orbiting visual)
 ═══════════════════════════════════════════════════ */
-
 class Parasite {
-  constructor(host, index) {
-    this.orbitAngle  = Math.random() * Math.PI * 2;
-    this.orbitRadius = host.radius + 9 + (index % 4) * 5;
-    this.orbitSpeed  = (2.5 + Math.random() * 2) * (Math.random() < 0.5 ? 1 : -1);
-    this.size        = 3 + Math.random() * 2;
-    this.phase       = Math.random() * Math.PI * 2;
+  constructor(host, idx) {
+    this.orbitAngle=(Math.random()*Math.PI*2); this.orbitRadius=host.radius+9+(idx%4)*5;
+    this.orbitSpeed=(2.5+Math.random()*2)*(Math.random()<0.5?1:-1); this.size=3+Math.random()*2; this.phase=Math.random()*Math.PI*2;
   }
-  update(dt) { this.orbitAngle += this.orbitSpeed * dt; this.phase += dt * 5; }
+  update(dt) { this.orbitAngle+=this.orbitSpeed*dt; this.phase+=dt*5; }
   getPos(host) { return host.pos.add(Vec2.fromAngle(this.orbitAngle).scale(this.orbitRadius)); }
-
   render(ctx, host) {
-    const pos   = this.getPos(host);
-    const pulse = 0.65 + 0.35 * Math.sin(this.phase);
-
-    ctx.save();
-    ctx.globalAlpha = 0.22;
-    ctx.strokeStyle = '#44ff99';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(host.pos.x, host.pos.y);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    ctx.restore();
-
-    const g = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.size * pulse * 4);
-    g.addColorStop(0, '#33ff88bb');
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, this.size * pulse * 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.globalAlpha = pulse;
-    ctx.fillStyle   = '#33ff88';
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, this.size * pulse, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    const pos=this.getPos(host), pulse=0.65+0.35*Math.sin(this.phase);
+    ctx.save(); ctx.globalAlpha=0.22; ctx.strokeStyle='#44ff99'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(host.pos.x,host.pos.y); ctx.lineTo(pos.x,pos.y); ctx.stroke(); ctx.restore();
+    const g=ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,this.size*pulse*4);
+    g.addColorStop(0,'#33ff88bb'); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(pos.x,pos.y,this.size*pulse*4,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=pulse; ctx.fillStyle='#33ff88';
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,this.size*pulse,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
   }
 }
 
 /* ═══════════════════════════════════════════════════
    ABILITY BASE
 ═══════════════════════════════════════════════════ */
-
 class Ability {
   constructor(cfg) {
-    this.name         = cfg.name         ?? 'Unknown';
-    this.description  = cfg.description  ?? '';
-    this.color        = cfg.color        ?? '#8888ff';
-    this.icon         = cfg.icon         ?? '?';
-    this.cooldown     = cfg.cooldown     ?? 3;
-    this.behaviorType = cfg.behaviorType ?? 'standard';
-    this.cdTimer      = 0;
-    this.owner        = null;
-    this._cfg         = cfg;
+    this.name=cfg.name??'Unknown'; this.description=cfg.description??''; this.color=cfg.color??'#8888ff';
+    this.icon=cfg.icon??'?'; this.cooldown=cfg.cooldown??3; this.behaviorType=cfg.behaviorType??'standard';
+    this.cdTimer=0; this.owner=null; this._cfg=cfg;
   }
-  attachTo(b) { this.owner = b; }
-  canActivate()   { return this.cdTimer <= 0; }
-  get cdFraction() { return Math.max(0, Math.min(1, this.cdTimer / this.cooldown)); }
-  update(dt)      { if (this.cdTimer > 0) this.cdTimer -= dt; }
-  tryActivate(_targets, _projectiles, _arena, _ps) {}
-  onCollision(_other, _ps) {}
+  attachTo(b)     { this.owner=b; }
+  canActivate()   { return this.cdTimer<=0; }
+  get cdFraction(){ return Math.max(0,Math.min(1,this.cdTimer/this.cooldown)); }
+  update(dt)      { if(this.cdTimer>0)this.cdTimer-=dt; }
+  tryActivate(_targets,_projectiles,_arena,_ps) {}
+  onCollision(_other,_ps) {}
 }
 
 /* ═══════════════════════════════════════════════════
    HARPOON ABILITY
 ═══════════════════════════════════════════════════ */
-
 class HarpoonAbility extends Ability {
-  constructor(cfg = {}) {
-    super({
-      name: 'Harpoon', icon: '⚓', color: '#4488ff',
-      description: 'Fires a harpoon in a random direction — bounces until it snags an opponent, then retracts along its exact path.',
-      cooldown: cfg.cooldown ?? 4.5,
-      behaviorType: 'ranged',
-      ...cfg,
-    });
-    this.projectileSpeed = cfg.projectileSpeed ?? 500;
-    this.hasLive         = false;
+  constructor(cfg={}) {
+    super({ name:'Harpoon',icon:'⚓',color:'#4488ff',
+      description:'Fires a harpoon in a random direction — bounces until it hooks someone, then retracts along the exact path.',
+      cooldown:cfg.cooldown??4.5, behaviorType:'ranged', ...cfg });
+    this.projectileSpeed=cfg.projectileSpeed??500; this.hasLive=false;
   }
-
   tryActivate(targets, projectiles, _arena, _ps) {
-    if (!this.canActivate() || this.hasLive) return;
-    if (!targets.some(t => t !== this.owner && t.alive)) return;
-
-    // Fire in a RANDOM direction — will bounce until it hits
+    if (!this.canActivate()||this.hasLive) return;
+    if (!targets.some(t=>t!==this.owner&&t.alive)) return;
     SFX.harpoonFire();
-    const dir = Vec2.fromAngle(Math.random() * Math.PI * 2);
-    const p   = new HarpoonProjectile(
-      this.owner.pos.clone(),
-      dir.scale(this.projectileSpeed),
-      this.owner,
-      this._cfg,
-    );
-    p._abilityRef = this;
-    projectiles.push(p);
-    this.cdTimer = this.cooldown;
-    this.hasLive = true;
+    const dir=Vec2.fromAngle(Math.random()*Math.PI*2);
+    const p=new HarpoonProjectile(this.owner.pos.clone(),dir.scale(this.projectileSpeed),this.owner,this._cfg);
+    p._abilityRef=this; projectiles.push(p); this.cdTimer=this.cooldown; this.hasLive=true;
   }
 }
 
 /* ═══════════════════════════════════════════════════
    PARASITE ABILITY
 ═══════════════════════════════════════════════════ */
-
 class ParasiteAbility extends Ability {
-  constructor(cfg = {}) {
-    super({
-      name: 'Parasite', icon: '🦠', color: '#33ff88',
-      description: 'Each collision infects the opponent with a new parasite that deals permanent stacking poison damage.',
-      cooldown: cfg.cooldown ?? 0.7,
-      behaviorType: 'tactical',
-      ...cfg,
-    });
-    this.dpsPerParasite = cfg.dpsPerParasite ?? 3;
-    this.maxParasites   = cfg.maxParasites   ?? 9;
+  constructor(cfg={}) {
+    super({ name:'Parasite',icon:'🦠',color:'#33ff88',
+      description:'Each collision infects the target with a permanent parasite that stacks poison damage.',
+      cooldown:cfg.cooldown??0.7, behaviorType:'tactical', ...cfg });
+    this.dpsPerParasite=cfg.dpsPerParasite??2.5; this.maxParasites=cfg.maxParasites??9;
   }
-
   tryActivate() {}
-
   onCollision(other, ps) {
-    if (!this.canActivate() || other.parasites.length >= this.maxParasites) return;
-    other.parasites.push(new Parasite(other, other.parasites.length));
-    other.poisonDPS = other.parasites.length * this.dpsPerParasite;
-    this.cdTimer    = this.cooldown;
-    SFX.parasiteInfect();
-    ps?.emit(10, {
-      pos: other.pos, color: ['#33ff88', '#88ffbb'],
-      speed: 110, minSize: 2, maxSize: 4, minLife: 0.25, maxLife: 0.55,
-    });
+    if (!this.canActivate()||other.parasites.length>=this.maxParasites) return;
+    other.parasites.push(new Parasite(other,other.parasites.length));
+    other.poisonDPS=other.parasites.length*this.dpsPerParasite;
+    this.cdTimer=this.cooldown; SFX.parasiteInfect();
+    ps?.emit(10,{pos:other.pos,color:['#33ff88','#88ffbb'],speed:110,minSize:2,maxSize:4,minLife:0.25,maxLife:0.55});
   }
 }
 
 /* ═══════════════════════════════════════════════════
    BLADE STORM ABILITY
 ═══════════════════════════════════════════════════ */
-
 class BladeStormAbility extends Ability {
-  constructor(cfg = {}) {
-    super({
-      name: 'Blade Storm', icon: '🌀', color: '#ffaa00',
-      description: 'Erupts in an expanding energy ring that damages all nearby opponents.',
-      cooldown: cfg.cooldown ?? 5,
-      behaviorType: 'aggressive',
-      ...cfg,
-    });
+  constructor(cfg={}) {
+    super({ name:'Blade Storm',icon:'🌀',color:'#ffaa00',
+      description:'Erupts in an expanding energy ring that damages nearby opponents.',
+      cooldown:cfg.cooldown??5, behaviorType:'aggressive', ...cfg });
   }
-
   tryActivate(targets, projectiles, _arena, ps) {
     if (!this.canActivate()) return;
-    const close = targets.filter(t =>
-      t !== this.owner && t.alive &&
-      t.pos.distTo(this.owner.pos) < (this._cfg.range ?? 130) + t.radius);
+    const close=targets.filter(t=>t!==this.owner&&t.alive&&t.pos.distTo(this.owner.pos)<(this._cfg.range??130)+t.radius);
     if (!close.length) return;
-    projectiles.push(new StormRing(this.owner.pos.clone(), this.owner, this._cfg));
-    this.cdTimer = this.cooldown;
-    SFX.bladeStorm();
-    ps?.emit(18, {
-      pos: this.owner.pos, color: ['#ffaa00', '#ff8800', '#ffee44'],
-      speed: 60, minSize: 2, maxSize: 5, minLife: 0.18, maxLife: 0.45,
-    });
+    projectiles.push(new StormRing(this.owner.pos.clone(),this.owner,this._cfg));
+    this.cdTimer=this.cooldown; SFX.bladeStorm();
+    ps?.emit(18,{pos:this.owner.pos,color:['#ffaa00','#ff8800','#ffee44'],speed:60,minSize:2,maxSize:5,minLife:0.18,maxLife:0.45});
   }
 }
 
 /* ═══════════════════════════════════════════════════
    MINE ABILITY
 ═══════════════════════════════════════════════════ */
-
 class MineAbility extends Ability {
-  constructor(cfg = {}) {
-    super({
-      name: 'Minelayer', icon: '💣', color: '#ff6600',
-      description: 'Drops proximity mines that arm after a short delay and explode with AoE knockback on contact.',
-      cooldown: cfg.cooldown ?? 2.2,
-      behaviorType: 'evasive',
-      ...cfg,
-    });
-    this.maxMines         = cfg.maxMines ?? 5;
-    this._activeMineCount = 0;
+  constructor(cfg={}) {
+    super({ name:'Minelayer',icon:'💣',color:'#ff6600',
+      description:'Drops proximity mines that arm fast and explode with AoE knockback.',
+      cooldown:cfg.cooldown??2.0, behaviorType:'evasive', ...cfg });
+    this.maxMines=cfg.maxMines??7; this._activeMineCount=0;
   }
-
   tryActivate(targets, projectiles, _arena, _ps) {
-    if (!this.canActivate()) return;
-    if (this._activeMineCount >= this.maxMines) return;
-    if (!targets.some(t => t !== this.owner && t.alive)) return;
-
-    // Don't stack on the same spot
-    const existing = projectiles.filter(p => p instanceof Mine && p.active);
-    if (existing.some(m => m.pos.distTo(this.owner.pos) < 48)) return;
-
-    const mine      = new Mine(this.owner.pos.clone(), this.owner, this._cfg);
-    mine._abilityRef = this;
-    projectiles.push(mine);
-    this._activeMineCount++;
-    this.cdTimer = this.cooldown;
+    if (!this.canActivate()||this._activeMineCount>=this.maxMines) return;
+    if (!targets.some(t=>t!==this.owner&&t.alive)) return;
+    const existing=projectiles.filter(p=>p instanceof Mine&&p.active);
+    if (existing.some(m=>m.pos.distTo(this.owner.pos)<50)) return;
+    const mine=new Mine(this.owner.pos.clone(),this.owner,this._cfg);
+    mine._abilityRef=this; projectiles.push(mine); this._activeMineCount++; this.cdTimer=this.cooldown;
     SFX.mineLay();
   }
 }
 
 /* ═══════════════════════════════════════════════════
    ABILITY REGISTRY
-   Register new abilities here — no other code changes needed.
 ═══════════════════════════════════════════════════ */
-
 const AbilityRegistry = (() => {
-  const map = {};
+  const map={};
   return {
-    register(key, factory, meta) { map[key] = { factory, key, ...meta }; },
-    create(key) {
-      if (!map[key]) throw new Error(`Unknown ability: ${key}`);
-      return map[key].factory();
-    },
-    getAll() { return Object.values(map); },
+    register(key,factory,meta){ map[key]={factory,key,...meta}; },
+    create(key){ if(!map[key])throw new Error(`Unknown ability: ${key}`); return map[key].factory(); },
+    getAll(){ return Object.values(map); },
   };
 })();
 
-AbilityRegistry.register('harpoon', () => new HarpoonAbility({
-  maxBounces:      GameConfig.harpoonBounces,
-  cooldown:        GameConfig.harpoonCooldown,
-  hitDamage:       GameConfig.harpoonDamage,
-  slamDamage:      GameConfig.harpoonSlam,
-  projectileSpeed: GameConfig.harpoonSpeed,
-  retractSpeed:    GameConfig.harpoonRetract,
-}), { name: 'Harpoon', icon: '⚓', color: '#4488ff',
-  description: 'Random-direction bouncing harpoon — snags & drags along exact bounce path' });
+AbilityRegistry.register('harpoon', ()=>new HarpoonAbility({
+  maxBounces:GameConfig.harpoonBounces, cooldown:GameConfig.harpoonCooldown,
+  hitDamage:GameConfig.harpoonDamage, slamDamage:GameConfig.harpoonSlam,
+  projectileSpeed:GameConfig.harpoonSpeed, retractSpeed:GameConfig.harpoonRetract,
+}),{ name:'Harpoon',icon:'⚓',color:'#4488ff', description:'Random-direction bouncing harpoon — snags & drags along exact bounce path' });
 
-AbilityRegistry.register('parasite', () => new ParasiteAbility({
-  dpsPerParasite: GameConfig.parasiteDPS,
-  maxParasites:   GameConfig.maxParasites,
-  cooldown:       GameConfig.parasiteCooldown,
-}), { name: 'Parasite', icon: '🦠', color: '#33ff88',
-  description: 'Contact infection — permanent stacking poison per hit' });
+AbilityRegistry.register('parasite', ()=>new ParasiteAbility({
+  dpsPerParasite:GameConfig.parasiteDPS, maxParasites:GameConfig.maxParasites, cooldown:GameConfig.parasiteCooldown,
+}),{ name:'Parasite',icon:'🦠',color:'#33ff88', description:'Contact infection — permanent stacking poison per hit' });
 
-AbilityRegistry.register('bladeStorm', () => new BladeStormAbility({
-  damage:   GameConfig.stormDamage,
-  range:    GameConfig.stormRange,
-  cooldown: GameConfig.stormCooldown,
-}), { name: 'Blade Storm', icon: '🌀', color: '#ffaa00',
-  description: 'Expanding energy ring — burst AoE damage' });
+AbilityRegistry.register('bladeStorm', ()=>new BladeStormAbility({
+  damage:GameConfig.stormDamage, range:GameConfig.stormRange, cooldown:GameConfig.stormCooldown,
+}),{ name:'Blade Storm',icon:'🌀',color:'#ffaa00', description:'Expanding energy ring — burst AoE damage' });
 
-AbilityRegistry.register('mineLayer', () => new MineAbility({
-  mineDamage:   GameConfig.mineDamage,
-  maxMines:     GameConfig.maxMines,
-  cooldown:     GameConfig.mineCooldown,
-  mineArmDelay: GameConfig.mineArmDelay,
-  mineTriggerR: GameConfig.mineTriggerR,
-}), { name: 'Minelayer', icon: '💣', color: '#ff6600',
-  description: 'Proximity mines with arm delay — AoE explosion + knockback' });
+AbilityRegistry.register('mineLayer', ()=>new MineAbility({
+  mineDamage:GameConfig.mineDamage, maxMines:GameConfig.maxMines, cooldown:GameConfig.mineCooldown,
+  mineArmDelay:GameConfig.mineArmDelay, mineTriggerR:GameConfig.mineTriggerR,
+}),{ name:'Minelayer',icon:'💣',color:'#ff6600', description:'Fast-arming proximity mines — AoE explosion + knockback' });
 
 /* ═══════════════════════════════════════════════════
    ARENA
 ═══════════════════════════════════════════════════ */
-
 class Arena {
-  constructor(cx, cy, radius) {
-    this.center = new Vec2(cx, cy);
-    this.radius = radius;
-    this._wAngle = 0;
-  }
-
-  update(dt) { this._wAngle += dt * 0.25; }
-
+  constructor(cx,cy,radius) { this.center=new Vec2(cx,cy); this.radius=radius; this._wAngle=0; }
+  update(dt) { this._wAngle+=dt*0.25; }
   constrainEntity(entity) {
-    const from  = entity.pos.sub(this.center);
-    const dist  = from.len();
-    const limit = this.radius - entity.radius;
-    if (dist > limit) {
-      const n    = from.normalize();
-      entity.pos = this.center.add(n.scale(limit));
-      entity.vel = entity.vel.reflect(n).scale(0.82);
-      return true;
-    }
+    const from=entity.pos.sub(this.center), dist=from.len(), limit=this.radius-entity.radius;
+    if (dist>limit) { const n=from.normalize(); entity.pos=this.center.add(n.scale(limit)); entity.vel=entity.vel.reflect(n).scale(0.82); return true; }
     return false;
   }
-
   render(ctx) {
-    const { x, y } = this.center;
-    const R = this.radius;
-
-    const floorG = ctx.createRadialGradient(x, y, 0, x, y, R);
-    floorG.addColorStop(0,   '#0e0e24');
-    floorG.addColorStop(0.7, '#0a0a1c');
-    floorG.addColorStop(1,   '#060614');
-    ctx.fillStyle = floorG;
-    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
-
-    // Clipped grid
-    ctx.save();
-    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.clip();
-    ctx.strokeStyle = '#15153a'; ctx.lineWidth = 1;
-    const G = 44;
-    for (let gx = -R; gx <= R; gx += G) {
-      ctx.beginPath(); ctx.moveTo(x + gx, y - R); ctx.lineTo(x + gx, y + R); ctx.stroke();
-    }
-    for (let gy = -R; gy <= R; gy += G) {
-      ctx.beginPath(); ctx.moveTo(x - R, y + gy); ctx.lineTo(x + R, y + gy); ctx.stroke();
-    }
+    const {x,y}=this.center, R=this.radius;
+    const fg=ctx.createRadialGradient(x,y,0,x,y,R);
+    fg.addColorStop(0,'#0e0e24'); fg.addColorStop(0.7,'#0a0a1c'); fg.addColorStop(1,'#060614');
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.clip();
+    ctx.strokeStyle='#15153a'; ctx.lineWidth=1;
+    for (let gx=-R;gx<=R;gx+=44){ctx.beginPath();ctx.moveTo(x+gx,y-R);ctx.lineTo(x+gx,y+R);ctx.stroke();}
+    for (let gy=-R;gy<=R;gy+=44){ctx.beginPath();ctx.moveTo(x-R,y+gy);ctx.lineTo(x+R,y+gy);ctx.stroke();}
     ctx.restore();
-
-    // Concentric rings
-    for (let r = 70; r < R; r += 90) {
-      ctx.strokeStyle = '#ffffff07'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    // Wall rings
-    for (let i = 0; i < 4; i++) {
-      ctx.strokeStyle = `rgba(60,90,255,${0.08 + i * 0.06})`;
-      ctx.lineWidth   = 4 - i;
-      ctx.beginPath(); ctx.arc(x, y, R - i * 3, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    // Spinning nodes
-    ctx.save();
-    ctx.translate(x, y); ctx.rotate(this._wAngle);
-    const N = 16;
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * Math.PI * 2;
-      ctx.fillStyle = i % 4 === 0 ? '#4466ff' : '#1a2266';
-      ctx.beginPath();
-      ctx.arc(Math.cos(a) * R, Math.sin(a) * R, i % 4 === 0 ? 5 : 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    for (let r=70;r<R;r+=90){ctx.strokeStyle='#ffffff07';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
+    for (let i=0;i<4;i++){ctx.strokeStyle=`rgba(60,90,255,${0.08+i*0.06})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.arc(x,y,R-i*3,0,Math.PI*2);ctx.stroke();}
+    ctx.save(); ctx.translate(x,y); ctx.rotate(this._wAngle);
+    for (let i=0;i<16;i++){const a=(i/16)*Math.PI*2;ctx.fillStyle=i%4===0?'#4466ff':'#1a2266';ctx.beginPath();ctx.arc(Math.cos(a)*R,Math.sin(a)*R,i%4===0?5:3,0,Math.PI*2);ctx.fill();}
     ctx.restore();
   }
 }
 
 /* ═══════════════════════════════════════════════════
-   BAYBLADE
+   BLADE  (main entity)
 ═══════════════════════════════════════════════════ */
-
-class Bayblade {
+class Blade {
   constructor(cfg) {
-    this.name      = cfg.name;
-    this.pos       = cfg.pos.clone();
-    this.vel       = Vec2.random().scale(rng.range(55, 100) * (GameConfig.speedMult ?? 1));
-    this.angle     = 0;
-    this.spinRate  = rng.range(9, 16);
-    this.radius    = 22;
-    this.color     = cfg.color;
-    this.glowColor = cfg.glowColor;
-    this.blades    = cfg.blades ?? 3;
-
-    this.maxHealth = cfg.maxHealth ?? 200;
-    this.health    = this.maxHealth;
-    this.alive     = true;
-
-    this.ability   = cfg.ability;
-    cfg.ability.attachTo(this);
-
-    this.parasites    = [];
-    this.poisonDPS    = 0;
-    this.caughtBy     = null;
-
-    this.trail        = [];
-    this.trailMax     = 30;
-    this.hitFlash     = 0;
-    this.colCooldown  = 0;
-
-    // Post-collision back-off
-    this._backoffTimer = 0;
-    this._backoffFrom  = new Vec2();
-
-    // AI
-    this._aiTimer   = rng.range(1, 3);
-    this._wanderAng = Math.random() * Math.PI * 2;
-    this._wanderT   = 0;
+    this.name=cfg.name; this.pos=cfg.pos.clone();
+    this.vel=Vec2.random().scale(rng.range(55,100)*(GameConfig.speedMult??1));
+    this.angle=0; this.spinRate=rng.range(9,16); this.radius=22;
+    this.color=cfg.color; this.glowColor=cfg.glowColor; this.blades=cfg.blades??3;
+    this.maxHealth=cfg.maxHealth??200; this.health=this.maxHealth; this.alive=true;
+    this.ability=cfg.ability; cfg.ability.attachTo(this);
+    this.parasites=[]; this.poisonDPS=0; this.caughtBy=null;
+    this.trail=[]; this.trailMax=30; this.hitFlash=0; this.colCooldown=0;
+    this._backoffTimer=0; this._backoffFrom=new Vec2();
+    this._aiTimer=rng.range(1,3); this._wanderAng=Math.random()*Math.PI*2; this._wanderT=0;
   }
 
   update(dt, arena, others, projectiles, ps) {
     if (!this.alive) return;
-
-    this.angle       += this.spinRate * dt;
-    this.hitFlash     = Math.max(0, this.hitFlash - dt * 5);
-    this.colCooldown  = Math.max(0, this.colCooldown - dt);
-    this._backoffTimer = Math.max(0, this._backoffTimer - dt);
+    this.angle+=this.spinRate*dt; this.hitFlash=Math.max(0,this.hitFlash-dt*5);
+    this.colCooldown=Math.max(0,this.colCooldown-dt); this._backoffTimer=Math.max(0,this._backoffTimer-dt);
     this.ability.update(dt);
-
-    // Poison damage
-    if (this.poisonDPS > 0) {
-      this.takeDamage(this.poisonDPS * dt, 'poison', null);
-      if (rng.chance(dt * Math.min(this.parasites.length, 5) * 2)) {
-        SFX.poisonTick();
-        ps.emit(1, {
-          pos: this.pos, color: '#33ff88',
-          speed: 35, minSize: 1, maxSize: 2.5, minLife: 0.4, maxLife: 1.0, alpha: 0.55,
-        });
-      }
+    if (this.poisonDPS>0) {
+      this.takeDamage(this.poisonDPS*dt,'poison',null);
+      if (rng.chance(dt*Math.min(this.parasites.length,5)*2)) { SFX.poisonTick(); ps.emit(1,{pos:this.pos,color:'#33ff88',speed:35,minSize:1,maxSize:2.5,minLife:0.4,maxLife:1.0,alpha:0.55}); }
     }
-    this.parasites.forEach(p => p.update(dt));
-
-    if (!this.caughtBy) {
-      this._ai(dt, others, arena, projectiles, ps);
-      this.pos = this.pos.add(this.vel.scale(dt));
-      arena.constrainEntity(this);
-    }
-
-    this.trail.push(this.pos.clone());
-    if (this.trail.length > this.trailMax) this.trail.shift();
-
-    if (this.health <= 0 && this.alive) {
-      this.alive = false;
-      SFX.baybladeKO();
-      ps.emit(60, {
-        pos: this.pos,
-        color: [this.color, this.glowColor, '#ffffff', '#ffaa44'],
-        speed: 270, minSize: 3, maxSize: 12, minLife: 0.5, maxLife: 1.7,
-      });
-    }
+    this.parasites.forEach(p=>p.update(dt));
+    if (!this.caughtBy) { this._ai(dt,others,arena,projectiles,ps); this.pos=this.pos.add(this.vel.scale(dt)); arena.constrainEntity(this); }
+    this.trail.push(this.pos.clone()); if (this.trail.length>this.trailMax) this.trail.shift();
+    if (this.health<=0&&this.alive) { this.alive=false; SFX.baybladeKO(); ps.emit(60,{pos:this.pos,color:[this.color,this.glowColor,'#ffffff','#ffaa44'],speed:270,minSize:3,maxSize:12,minLife:0.5,maxLife:1.7}); }
   }
 
   _ai(dt, others, arena, projectiles, ps) {
-    const enemies = others.filter(o => o !== this && o.alive);
+    const enemies=others.filter(o=>o!==this&&o.alive);
     if (!enemies.length) return;
-
-    const nearest = enemies.reduce((a, b) =>
-      a.pos.distTo(this.pos) < b.pos.distTo(this.pos) ? a : b);
-
-    // Ability activation timer
-    this._aiTimer -= dt;
-    if (this._aiTimer <= 0) {
-      this.ability.tryActivate(enemies, projectiles, arena, ps);
-      this._aiTimer = rng.range(0.4, 1.8);
+    const nearest=enemies.reduce((a,b)=>a.pos.distTo(this.pos)<b.pos.distTo(this.pos)?a:b);
+    this._aiTimer-=dt;
+    if (this._aiTimer<=0) { this.ability.tryActivate(enemies,projectiles,arena,ps); this._aiTimer=rng.range(0.4,1.8); }
+    if (this._backoffTimer>0) { const away=this.pos.sub(this._backoffFrom).normalize().scale(195*(GameConfig.speedMult)); this.vel=Vec2.lerp(this.vel,away,dt*5); return; }
+    const S=GameConfig.speedMult, bt=this.ability.behaviorType;
+    let repulsion=new Vec2();
+    if (bt!=='aggressive') {
+      for (const o of others) { if(o===this||!o.alive)continue; const d=this.pos.distTo(o.pos); if(d<115&&d>1)repulsion=repulsion.add(this.pos.sub(o.pos).normalize().scale((115-d)*1.4)); }
     }
 
-    // Post-collision back-off overrides normal steering
-    if (this._backoffTimer > 0) {
-      const away = this.pos.sub(this._backoffFrom).normalize().scale(195 * GameConfig.speedMult);
-      this.vel = Vec2.lerp(this.vel, away, dt * 5);
-      return;
-    }
-
-    const S  = GameConfig.speedMult;
-    const bt = this.ability.behaviorType;
-
-    // Separation repulsion (for non-aggressive: keep personal space)
-    let repulsion = new Vec2();
-    if (bt !== 'aggressive') {
-      for (const o of others) {
-        if (o === this || !o.alive) continue;
-        const d = this.pos.distTo(o.pos);
-        if (d < 115 && d > 1) {
-          repulsion = repulsion.add(this.pos.sub(o.pos).normalize().scale((115 - d) * 1.4));
-        }
+    if (bt==='tactical') {
+      // Phase 0: Dodge armed mines (highest priority)
+      const armedMines=projectiles.filter(p=>p instanceof Mine&&p.active&&p.armed&&p.owner!==this);
+      let mineRisk=false, mineFleeVel=new Vec2();
+      for (const m of armedMines) {
+        const toMe=this.pos.sub(m.pos), dist=toMe.len(), risk=m.triggerR+this.radius+38;
+        if (dist<risk) { mineFleeVel=mineFleeVel.add(toMe.normalize().scale((risk-dist)*4)); mineRisk=true; }
       }
-    }
+      if (mineRisk) { this.vel=Vec2.lerp(this.vel,mineFleeVel.normalize().scale(225*S),dt*7); return; }
 
-    if (bt === 'tactical') {
-      // ── Phase 1: Dodge incoming harpoons ──────────────────────────
-      // Scan flying (non-retracting) harpoons owned by enemies.
-      const flyingHarpoons = projectiles.filter(p =>
-        p instanceof HarpoonProjectile && p.active && !p.retracting &&
-        p.owner !== this);
-
-      let dodging  = false;
-      let dodgeVel = new Vec2();
-
+      // Phase 1: Dodge flying harpoons
+      const flyingHarpoons=projectiles.filter(p=>p instanceof HarpoonProjectile&&p.active&&!p.retracting&&p.owner!==this);
+      let dodging=false, dodgeVel=new Vec2();
       for (const h of flyingHarpoons) {
-        const toMe = this.pos.sub(h.pos);
-        const dist = toMe.len();
-        if (dist > 260) continue;
-
-        // Is it heading toward us? (dot product with unit vector to us)
-        const hDir       = h.vel.normalize();
-        const approaching = hDir.dot(toMe.normalize());
-        if (approaching < 0.1) continue; // not aimed at us
-
-        // Pick the perpendicular direction that moves further from harpoon's
-        // line of travel (away from the projection of toMe onto harpoon axis).
-        const awayFromPath = toMe.sub(hDir.scale(toMe.dot(hDir)));
-        const perp         = hDir.perp();
-        const dodgeDir     = perp.dot(awayFromPath) >= 0 ? perp : perp.scale(-1);
-        dodgeVel = dodgeVel.add(dodgeDir.scale(240 * S));
-        dodging  = true;
+        const toMe=this.pos.sub(h.pos), dist=toMe.len();
+        if (dist>260) continue;
+        const hDir=h.vel.normalize(), approaching=hDir.dot(toMe.normalize());
+        if (approaching<0.1) continue;
+        const awayFromPath=toMe.sub(hDir.scale(toMe.dot(hDir))), perp=hDir.perp();
+        const dodgeDir=perp.dot(awayFromPath)>=0?perp:perp.scale(-1);
+        dodgeVel=dodgeVel.add(dodgeDir.scale(240*S)); dodging=true;
       }
+      if (dodging) { this.vel=Vec2.lerp(this.vel,dodgeVel.normalize().scale(240*S),dt*7); return; }
 
-      if (dodging) {
-        // Prioritise dodge over everything else
-        this.vel = Vec2.lerp(this.vel,
-          dodgeVel.normalize().scale(240 * S), dt * 7);
-        return;
-      }
-
-      // ── Phase 2: Attack only during enemy harpoon cooldown ────────
-      // "Safe window" = no harpoon is currently flying AND the enemy
-      // that owns a HarpoonAbility cannot fire yet (cdTimer > 0).
-      const harpoonEnemies = enemies.filter(e =>
-        typeof e.ability.hasLive === 'boolean');
-      const anyLive   = harpoonEnemies.some(e => e.ability.hasLive);
-      const safeWindow = harpoonEnemies.length === 0 ||
-        (!anyLive && harpoonEnemies.every(e => e.ability.cdTimer > 0.5));
-
+      // Phase 2: Attack during harpoon cooldown; prefer harpoon targets
+      const harpoonEnemies=enemies.filter(e=>typeof e.ability.hasLive==='boolean');
+      const anyLive=harpoonEnemies.some(e=>e.ability.hasLive);
+      const safeWindow=harpoonEnemies.length===0||(!anyLive&&harpoonEnemies.every(e=>e.ability.cdTimer>0.5));
       if (safeWindow) {
-        // Harpoon is cooling down — charge in
-        const toward = nearest.pos.sub(this.pos).normalize().scale(200 * S);
-        this.vel = Vec2.lerp(this.vel, toward, dt * 4.0);
+        // Prefer attacking harpoon user; avoid mine-dense paths
+        let target=nearest;
+        if (harpoonEnemies.length>0) {
+          const best=harpoonEnemies.reduce((a,b)=>a.pos.distTo(this.pos)<b.pos.distTo(this.pos)?a:b);
+          const minesNear=projectiles.filter(p=>p instanceof Mine&&p.active&&p.armed&&p.pos.distTo(best.pos)<100);
+          if (minesNear.length<2) target=best;
+        }
+        this.vel=Vec2.lerp(this.vel,target.pos.sub(this.pos).normalize().scale(200*S),dt*4.0);
       } else {
-        // Harpoon ready or in flight — orbit at safe range, waiting
-        const toNear = nearest.pos.sub(this.pos);
-        const dist   = toNear.len();
-        const safeR  = 180;
-        if (dist < safeR) {
-          // Too close, back off
-          const away = toNear.normalize().scale(-160 * S);
-          this.vel = Vec2.lerp(this.vel, away.add(repulsion), dt * 3.5);
-        } else {
-          // Orbit at safe distance
-          const perp = toNear.perp().normalize().scale(138 * S);
-          const toC  = arena.center.sub(this.pos);
-          const pull = toC.len() > arena.radius * 0.58
-            ? toC.normalize().scale(100 * S) : new Vec2();
-          this.vel = Vec2.lerp(this.vel, perp.add(pull), dt * 2.5);
+        // Harpoon ready or live — orbit at safe range
+        const toNear=nearest.pos.sub(this.pos), dist=toNear.len(), safeR=180;
+        if (dist<safeR) { this.vel=Vec2.lerp(this.vel,toNear.normalize().scale(-160*S).add(repulsion),dt*3.5); }
+        else {
+          const perp=toNear.perp().normalize().scale(138*S);
+          const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.58?toC.normalize().scale(100*S):new Vec2();
+          this.vel=Vec2.lerp(this.vel,perp.add(pull),dt*2.5);
         }
       }
 
-    } else if (bt === 'aggressive') {
-      const toward = nearest.pos.sub(this.pos).normalize().scale(185 * S);
-      this.vel = Vec2.lerp(this.vel, toward, dt * 3.2);
+    } else if (bt==='aggressive') {
+      this.vel=Vec2.lerp(this.vel,nearest.pos.sub(this.pos).normalize().scale(185*S),dt*3.2);
 
-    } else if (bt === 'ranged') {
-      this._wanderT -= dt;
-      if (this._wanderT <= 0) {
-        this._wanderAng = Math.random() * Math.PI * 2;
-        this._wanderT   = rng.range(1.2, 3.0);
-      }
-      const wander  = Vec2.fromAngle(this._wanderAng).scale(130 * S);
-      const toC     = arena.center.sub(this.pos);
-      const pull    = toC.len() > arena.radius * 0.55
-        ? toC.normalize().scale(165 * S) : new Vec2();
-      this.vel = Vec2.lerp(this.vel, wander.add(pull).add(repulsion), dt * 1.7);
+    } else if (bt==='ranged') {
+      this._wanderT-=dt;
+      if (this._wanderT<=0){this._wanderAng=Math.random()*Math.PI*2;this._wanderT=rng.range(1.2,3.0);}
+      const wander=Vec2.fromAngle(this._wanderAng).scale(130*S);
+      const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.55?toC.normalize().scale(165*S):new Vec2();
+      this.vel=Vec2.lerp(this.vel,wander.add(pull).add(repulsion),dt*1.7);
 
-    } else if (bt === 'evasive') {
-      const toEnemy = nearest.pos.sub(this.pos);
-      const d       = toEnemy.len();
-      const fleeR   = 165;
-      if (d < fleeR) {
-        const flee = toEnemy.normalize().scale(-175 * S);
-        this.vel = Vec2.lerp(this.vel, flee.add(repulsion), dt * 4);
+    } else if (bt==='evasive') {
+      // Zone-based mine-laying strategy:
+      // < 100: emergency flee; 100-175: orbit (drop mines here); > 175: approach to get in range
+      const toNearest=nearest.pos.sub(this.pos), d=toNearest.len();
+      if (d<100) {
+        this.vel=Vec2.lerp(this.vel,toNearest.normalize().scale(-200*S).add(repulsion),dt*5);
+      } else if (d<175) {
+        // Sweet spot — orbit so mines get laid between us and enemy
+        const perp=toNearest.perp().normalize().scale(155*S);
+        const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.6?toC.normalize().scale(95*S):new Vec2();
+        this.vel=Vec2.lerp(this.vel,perp.add(pull),dt*2.5);
       } else {
-        const perp = toEnemy.perp().normalize().scale(140 * S);
-        const toC  = arena.center.sub(this.pos);
-        const pull = toC.len() > arena.radius * 0.58 ? toC.normalize().scale(110 * S) : new Vec2();
-        this.vel = Vec2.lerp(this.vel, perp.add(pull).add(repulsion), dt * 2.5);
+        // Too far — carefully approach to mine-laying range
+        const toward=toNearest.normalize().scale(145*S), perp=toNearest.perp().normalize().scale(55*S);
+        const toC=arena.center.sub(this.pos), pull=toC.len()>arena.radius*0.65?toC.normalize().scale(75*S):new Vec2();
+        this.vel=Vec2.lerp(this.vel,toward.add(perp).add(pull).add(repulsion),dt*2);
       }
 
     } else {
-      const toC  = arena.center.sub(this.pos);
-      const perp = toC.perp().normalize().scale(140 * S);
-      this.vel   = Vec2.lerp(this.vel, perp.add(toC.normalize().scale(40 * S)).add(repulsion), dt * 2);
+      const toC=arena.center.sub(this.pos), perp=toC.perp().normalize().scale(140*S);
+      this.vel=Vec2.lerp(this.vel,perp.add(toC.normalize().scale(40*S)).add(repulsion),dt*2);
     }
   }
 
   takeDamage(amount, type, _source) {
     if (!this.alive) return;
-    this.health = Math.max(0, this.health - amount);
-    if (type !== 'poison') this.hitFlash = 1;
+    this.health=Math.max(0,this.health-amount);
+    if (type!=='poison') this.hitFlash=1;
   }
 
   onCollisionWith(other, ps) {
-    if (this.colCooldown > 0) return;
-    this.ability.onCollision(other, ps);
-    this.colCooldown   = 0.28;
-    this._backoffTimer = 0.55;
-    this._backoffFrom  = other.pos.clone();
+    if (this.colCooldown>0) return;
+    this.ability.onCollision(other,ps);
+    this.colCooldown=0.28; this._backoffTimer=0.55; this._backoffFrom=other.pos.clone();
   }
 
   render(ctx) {
     if (!this.alive) return;
-
-    // Trail
-    if (this.trail.length > 1) {
-      ctx.save();
-      ctx.lineCap = 'round';
-      for (let i = 1; i < this.trail.length; i++) {
-        const t = i / this.trail.length;
-        ctx.globalAlpha = t * 0.20;
-        ctx.strokeStyle = this.glowColor;
-        ctx.lineWidth   = t * this.radius * 0.55;
-        ctx.beginPath();
-        ctx.moveTo(this.trail[i - 1].x, this.trail[i - 1].y);
-        ctx.lineTo(this.trail[i].x,     this.trail[i].y);
-        ctx.stroke();
-      }
+    if (this.trail.length>1) {
+      ctx.save(); ctx.lineCap='round';
+      for (let i=1;i<this.trail.length;i++){const t=i/this.trail.length;ctx.globalAlpha=t*0.20;ctx.strokeStyle=this.glowColor;ctx.lineWidth=t*this.radius*0.55;ctx.beginPath();ctx.moveTo(this.trail[i-1].x,this.trail[i-1].y);ctx.lineTo(this.trail[i].x,this.trail[i].y);ctx.stroke();}
       ctx.restore();
     }
-
-    // Parasites (behind blade)
-    this.parasites.forEach(p => p.render(ctx, this));
-
-    ctx.save();
-    ctx.translate(this.pos.x, this.pos.y);
-
-    // Ambient glow
-    const ambient = ctx.createRadialGradient(0, 0, this.radius * 0.4, 0, 0, this.radius * 2.8);
-    ambient.addColorStop(0, this.glowColor + '40');
-    ambient.addColorStop(1, 'transparent');
-    ctx.fillStyle = ambient;
-    ctx.beginPath(); ctx.arc(0, 0, this.radius * 2.8, 0, Math.PI * 2); ctx.fill();
-
-    // Hit flash
-    if (this.hitFlash > 0) {
-      const flash = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius * 2.2);
-      flash.addColorStop(0, `rgba(255,255,255,${this.hitFlash * 0.7})`);
-      flash.addColorStop(1, 'transparent');
-      ctx.fillStyle = flash;
-      ctx.beginPath(); ctx.arc(0, 0, this.radius * 2.2, 0, Math.PI * 2); ctx.fill();
-    }
-
-    // Spinning blades
+    this.parasites.forEach(p=>p.render(ctx,this));
+    ctx.save(); ctx.translate(this.pos.x,this.pos.y);
+    const ambient=ctx.createRadialGradient(0,0,this.radius*0.4,0,0,this.radius*2.8);
+    ambient.addColorStop(0,this.glowColor+'40'); ambient.addColorStop(1,'transparent');
+    ctx.fillStyle=ambient; ctx.beginPath(); ctx.arc(0,0,this.radius*2.8,0,Math.PI*2); ctx.fill();
+    if (this.hitFlash>0){const flash=ctx.createRadialGradient(0,0,0,0,0,this.radius*2.2);flash.addColorStop(0,`rgba(255,255,255,${this.hitFlash*0.7})`);flash.addColorStop(1,'transparent');ctx.fillStyle=flash;ctx.beginPath();ctx.arc(0,0,this.radius*2.2,0,Math.PI*2);ctx.fill();}
     ctx.rotate(this.angle);
-    for (let i = 0; i < this.blades; i++) {
-      ctx.save();
-      ctx.rotate((i / this.blades) * Math.PI * 2);
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.moveTo(0, -4);
-      ctx.bezierCurveTo(this.radius * 0.4, -12, this.radius * 0.85, -11, this.radius, -5);
-      ctx.arc(this.radius * 0.88, 0, 6, -Math.PI * 0.6, Math.PI * 0.6);
-      ctx.bezierCurveTo(this.radius * 0.85, 11, this.radius * 0.4, 12, 0, 4);
-      ctx.closePath();
-      ctx.fill();
-      // Highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.17)';
-      ctx.beginPath();
-      ctx.moveTo(2, -2);
-      ctx.lineTo(this.radius * 0.65, -7);
-      ctx.lineTo(this.radius * 0.65, -2);
-      ctx.lineTo(2, 0);
-      ctx.closePath();
-      ctx.fill();
+    for (let i=0;i<this.blades;i++){
+      ctx.save(); ctx.rotate((i/this.blades)*Math.PI*2); ctx.fillStyle=this.color;
+      ctx.beginPath(); ctx.moveTo(0,-4); ctx.bezierCurveTo(this.radius*0.4,-12,this.radius*0.85,-11,this.radius,-5);
+      ctx.arc(this.radius*0.88,0,6,-Math.PI*0.6,Math.PI*0.6); ctx.bezierCurveTo(this.radius*0.85,11,this.radius*0.4,12,0,4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.17)'; ctx.beginPath(); ctx.moveTo(2,-2); ctx.lineTo(this.radius*0.65,-7); ctx.lineTo(this.radius*0.65,-2); ctx.lineTo(2,0); ctx.closePath(); ctx.fill();
       ctx.restore();
     }
-
-    // Hub
-    ctx.fillStyle = '#0d0d22';
-    ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.38, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = this.glowColor;
-    ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.24, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.10, 0, Math.PI * 2); ctx.fill();
-
+    ctx.fillStyle='#0d0d22'; ctx.beginPath(); ctx.arc(0,0,this.radius*0.38,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=this.glowColor; ctx.beginPath(); ctx.arc(0,0,this.radius*0.24,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(0,0,this.radius*0.10,0,Math.PI*2); ctx.fill();
     ctx.restore();
-
-    // Name tag
-    ctx.fillStyle = 'rgba(200,200,255,0.7)';
-    ctx.font      = 'bold 10px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText(this.name, this.pos.x, this.pos.y - this.radius - 15);
+    ctx.fillStyle='rgba(200,200,255,0.7)'; ctx.font='bold 10px system-ui'; ctx.textAlign='center';
+    ctx.fillText(this.name,this.pos.x,this.pos.y-this.radius-15);
   }
 }
 
 /* ═══════════════════════════════════════════════════
    GAME
 ═══════════════════════════════════════════════════ */
-
 class Game {
   constructor(canvas) {
-    this.canvas      = canvas;
-    this.ctx         = canvas.getContext('2d');
-    this.W           = canvas.width;
-    this.H           = canvas.height;
-    this.arena       = new Arena(this.W / 2, this.H / 2, Math.min(this.W, this.H) / 2 - 28);
-    this.bayblades   = [];
-    this.projectiles = [];
-    this.ps          = new ParticleSystem();
-    this.state       = 'idle';
-    this.winner      = null;
-    this._lastTs     = null;
-
-    const loop = (ts) => {
+    this.canvas=canvas; this.ctx=canvas.getContext('2d');
+    this.W=canvas.width; this.H=canvas.height;
+    this.arena=new Arena(this.W/2,this.H/2,Math.min(this.W,this.H)/2-28);
+    this.blades=[]; this.projectiles=[]; this.ps=new ParticleSystem();
+    this.state='idle'; this.winner=null; this._lastTs=null;
+    const loop=(ts)=>{
       requestAnimationFrame(loop);
-      const dt = Math.min(((ts - (this._lastTs ?? ts)) / 1000), 0.05);
-      this._lastTs = ts;
-      if (this.state === 'running') this._update(dt);
-      this._render();
+      const dt=Math.min(((ts-(this._lastTs??ts))/1000),0.05); this._lastTs=ts;
+      if(this.state==='running')this._update(dt); this._render();
     };
     requestAnimationFrame(loop);
   }
-
   start(configs) {
-    this.winner      = null;
-    this.projectiles = [];
-    this.ps          = new ParticleSystem();
-    this.bayblades   = configs.map(c => new Bayblade(c));
-    this.state       = 'running';
-    SFX.resume();
-    SFX.battleStart();
+    this.winner=null; this.projectiles=[]; this.ps=new ParticleSystem();
+    this.blades=configs.map(c=>new Blade(c)); this.state='running';
+    SFX.resume(); SFX.battleStart();
   }
-
-  reset() {
-    this.state       = 'idle';
-    this.winner      = null;
-    this.bayblades   = [];
-    this.projectiles = [];
-    this.ps          = new ParticleSystem();
-  }
+  reset() { this.state='idle'; this.winner=null; this.blades=[]; this.projectiles=[]; this.ps=new ParticleSystem(); }
 
   _update(dt) {
-    this.arena.update(dt);
-    this.ps.update(dt);
-
-    // Projectiles
-    this.projectiles = this.projectiles.filter(p => {
-      p.update(dt, this.arena, this.bayblades, this.ps);
-      if (!p.active) {
-        if (p._abilityRef && p._abilityRef.hasLive !== undefined) p._abilityRef.hasLive = false;
-        p.onDeactivate();
-      }
+    this.arena.update(dt); this.ps.update(dt);
+    this.projectiles=this.projectiles.filter(p=>{
+      p.update(dt,this.arena,this.blades,this.ps);
+      if(!p.active){if(p._abilityRef&&p._abilityRef.hasLive!==undefined)p._abilityRef.hasLive=false;p.onDeactivate();}
       return p.active;
     });
-
-    // Bayblades
-    this.bayblades.forEach(b =>
-      b.update(dt, this.arena, this.bayblades, this.projectiles, this.ps));
-
-    // Bayblade–Bayblade collisions
-    for (let i = 0; i < this.bayblades.length; i++) {
-      for (let j = i + 1; j < this.bayblades.length; j++) {
-        const a = this.bayblades[i];
-        const b = this.bayblades[j];
-        if (!a.alive || !b.alive || a.caughtBy || b.caughtBy) continue;
-
-        const d   = a.pos.distTo(b.pos);
-        const min = a.radius + b.radius;
-        if (d >= min) continue;
-
-        const n   = b.pos.sub(a.pos).normalize();
-        const ov  = min - d;
-        a.pos = a.pos.sub(n.scale(ov * 0.5));
-        b.pos = b.pos.add(n.scale(ov * 0.5));
-
-        const rv = a.vel.sub(b.vel).dot(n);
-        if (rv > 0) {
-          const imp = rv * 0.82;
-          a.vel = a.vel.sub(n.scale(imp));
-          b.vel = b.vel.add(n.scale(imp));
-        }
-
-        const spd = Math.abs(a.vel.sub(b.vel).dot(n));
-        if (spd > 25) {
-          a.takeDamage(spd * 0.05, 'collision', b);
-          b.takeDamage(spd * 0.05, 'collision', a);
-          SFX.collision(spd);
-        }
-
-        a.onCollisionWith(b, this.ps);
-        b.onCollisionWith(a, this.ps);
-
-        this.ps.emit(9, {
-          pos: a.pos.add(b.pos).scale(0.5),
-          color: ['#ffffff', a.glowColor, b.glowColor],
-          speed: 140, minSize: 2, maxSize: 5, minLife: 0.15, maxLife: 0.4,
-        });
+    this.blades.forEach(b=>b.update(dt,this.arena,this.blades,this.projectiles,this.ps));
+    // Blade–Blade collisions
+    for (let i=0;i<this.blades.length;i++) {
+      for (let j=i+1;j<this.blades.length;j++) {
+        const a=this.blades[i],b=this.blades[j];
+        if(!a.alive||!b.alive||a.caughtBy||b.caughtBy)continue;
+        const d=a.pos.distTo(b.pos),min=a.radius+b.radius;
+        if(d>=min)continue;
+        const n=b.pos.sub(a.pos).normalize(),ov=min-d;
+        a.pos=a.pos.sub(n.scale(ov*0.5)); b.pos=b.pos.add(n.scale(ov*0.5));
+        const rv=a.vel.sub(b.vel).dot(n);
+        if(rv>0){const imp=rv*0.82;a.vel=a.vel.sub(n.scale(imp));b.vel=b.vel.add(n.scale(imp));}
+        const spd=Math.abs(a.vel.sub(b.vel).dot(n));
+        if(spd>25){a.takeDamage(spd*0.05,'collision',b);b.takeDamage(spd*0.05,'collision',a);SFX.collision(spd);}
+        a.onCollisionWith(b,this.ps); b.onCollisionWith(a,this.ps);
+        this.ps.emit(9,{pos:a.pos.add(b.pos).scale(0.5),color:['#ffffff',a.glowColor,b.glowColor],speed:140,minSize:2,maxSize:5,minLife:0.15,maxLife:0.4});
       }
     }
-
-    // Win check
-    const alive = this.bayblades.filter(b => b.alive);
-    if (alive.length < this.bayblades.length && this.bayblades.length > 0 && alive.length <= 1) {
-      this.winner = alive[0] ?? null;
-      this.state  = 'ended';
-      SFX.winnerFanfare();
+    const alive=this.blades.filter(b=>b.alive);
+    if(alive.length<this.blades.length&&this.blades.length>0&&alive.length<=1){
+      this.winner=alive[0]??null; this.state='ended'; SFX.winnerFanfare();
     }
   }
 
   _render() {
-    const { ctx, W, H } = this;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#07071a';
-    ctx.fillRect(0, 0, W, H);
-
-    this.arena.render(ctx);
-    this.ps.render(ctx);
-    this.projectiles.forEach(p => p.render(ctx));
-    this.bayblades.forEach(b => b.render(ctx));
-
-    // Winner pulse
-    if (this.state === 'ended' && this.winner) {
-      const t  = ((Date.now() % 700) / 700);
-      const r  = 58 + t * 24;
-      const pg = ctx.createRadialGradient(
-        this.winner.pos.x, this.winner.pos.y, 0,
-        this.winner.pos.x, this.winner.pos.y, r,
-      );
-      pg.addColorStop(0, this.winner.glowColor + '55');
-      pg.addColorStop(1, 'transparent');
-      ctx.fillStyle = pg;
-      ctx.beginPath();
-      ctx.arc(this.winner.pos.x, this.winner.pos.y, r, 0, Math.PI * 2);
-      ctx.fill();
+    const {ctx,W,H}=this;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#07071a'; ctx.fillRect(0,0,W,H);
+    this.arena.render(ctx); this.ps.render(ctx);
+    this.projectiles.forEach(p=>p.render(ctx));
+    this.blades.forEach(b=>b.render(ctx));
+    if(this.state==='ended'&&this.winner){
+      const t=((Date.now()%700)/700),r=58+t*24;
+      const pg=ctx.createRadialGradient(this.winner.pos.x,this.winner.pos.y,0,this.winner.pos.x,this.winner.pos.y,r);
+      pg.addColorStop(0,this.winner.glowColor+'55'); pg.addColorStop(1,'transparent');
+      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(this.winner.pos.x,this.winner.pos.y,r,0,Math.PI*2); ctx.fill();
     }
-
-    // In-canvas cooldown bars
-    this.bayblades.forEach(b => {
-      if (!b.alive) return;
-      const cd = b.ability.cdFraction;
-      if (cd <= 0) return;
-      const bw = 42, bh = 4;
-      const bx = b.pos.x - bw / 2;
-      const by = b.pos.y + b.radius + 7;
-      ctx.fillStyle = '#1a1a36';
-      ctx.fillRect(bx, by, bw, bh);
-      ctx.fillStyle = b.ability.color;
-      ctx.fillRect(bx, by, bw * (1 - cd), bh);
+    this.blades.forEach(b=>{
+      if(!b.alive)return;
+      const cd=b.ability.cdFraction; if(cd<=0)return;
+      const bw=42,bh=4,bx=b.pos.x-bw/2,by=b.pos.y+b.radius+7;
+      ctx.fillStyle='#1a1a36'; ctx.fillRect(bx,by,bw,bh);
+      ctx.fillStyle=b.ability.color; ctx.fillRect(bx,by,bw*(1-cd),bh);
     });
   }
 }
@@ -1847,274 +1183,202 @@ class Game {
 /* ═══════════════════════════════════════════════════
    UI
 ═══════════════════════════════════════════════════ */
-
 class UI {
   constructor(game) {
-    this.game = game;
-
-    // Default fighter roster — extend this array to add more Bayblades
-    this.fighters = [
-      { name: 'Vortex',    color: '#4488ff', glowColor: '#88bbff', abilityKey: 'harpoon',   blades: 3 },
-      { name: 'Plague',    color: '#ff4466', glowColor: '#ff88aa', abilityKey: 'parasite',  blades: 3 },
-      { name: 'Blastwave', color: '#ff6600', glowColor: '#ffaa44', abilityKey: 'mineLayer', blades: 4 },
+    this.game=game;
+    // Default fighter roster
+    this.fighters=[
+      { name:'Vortex',    color:'#4488ff', glowColor:'#88bbff', abilityKey:'harpoon',   blades:3 },
+      { name:'Plague',    color:'#ff4466', glowColor:'#ff88aa', abilityKey:'parasite',  blades:3 },
+      { name:'Blastwave', color:'#ff6600', glowColor:'#ffaa44', abilityKey:'mineLayer', blades:4 },
     ];
-
-    this._buildConfigPanel();
     this._buildCards();
+    this._buildConfigPanel();
     this._buildLegend();
     this._bindButtons();
     this._uiLoop();
   }
 
-  /* ── Config panel ── */
-  _buildConfigPanel() {
-    const body   = document.getElementById('config-body');
-    const toggle = document.getElementById('cfg-toggle');
-
-    const defs = [
-      // General
-      { section: 'General' },
-      { key: 'volume',          label: 'Volume',        min:0,   max:1,    step:0.05, suffix:'' },
-      { key: 'health',          label: 'Health',        min:80,  max:500,  step:20,  suffix:'' },
-      { key: 'speedMult',       label: 'Speed',         min:0.5, max:2.5,  step:0.1, suffix:'×' },
-      // Harpoon
-      { section: 'Harpoon' },
-      { key: 'harpoonBounces',  label: 'Bounces',       min:3,   max:20,   step:1,   suffix:'' },
-      { key: 'harpoonCooldown', label: 'Cooldown',      min:2,   max:10,   step:0.5, suffix:'s' },
-      { key: 'harpoonDamage',   label: 'Hit DMG',       min:5,   max:50,   step:5,   suffix:'' },
-      { key: 'harpoonSlam',     label: 'Slam DMG',      min:10,  max:80,   step:5,   suffix:'' },
-      // Parasite
-      { section: 'Parasite' },
-      { key: 'parasiteDPS',     label: 'DPS/parasite',  min:1,   max:12,   step:1,   suffix:'' },
-      { key: 'maxParasites',    label: 'Max parasites', min:2,   max:15,   step:1,   suffix:'' },
-      // Mine
-      { section: 'Minelayer' },
-      { key: 'mineDamage',      label: 'Explosion DMG', min:15,  max:90,   step:5,   suffix:'' },
-      { key: 'maxMines',        label: 'Max mines',     min:2,   max:10,   step:1,   suffix:'' },
-      { key: 'mineTriggerR',    label: 'Trigger radius',min:20,  max:60,   step:2,   suffix:'' },
-    ];
-
-    let html = '';
-    defs.forEach(d => {
-      if (d.section) {
-        html += `<div class="cfg-section">${d.section}</div>`;
-        return;
-      }
-      html += `
-        <div class="cfg-row">
-          <label class="cfg-label">${d.label}</label>
-          <input type="range" class="cfg-slider"
-            min="${d.min}" max="${d.max}" step="${d.step}"
-            value="${GameConfig[d.key]}"
-            data-cfg="${d.key}" data-suffix="${d.suffix}">
-          <span class="cfg-val" id="cfgv-${d.key}">${d.key === 'volume' ? Math.round(GameConfig[d.key] * 100) + '%' : GameConfig[d.key] + d.suffix}</span>
-        </div>`;
-    });
-    body.innerHTML = html;
-
-    body.querySelectorAll('.cfg-slider').forEach(input => {
-      const key    = input.dataset.cfg;
-      const suffix = input.dataset.suffix;
-      const valEl  = document.getElementById(`cfgv-${key}`);
-      input.addEventListener('input', () => {
-        const v = parseFloat(input.value);
-        GameConfig[key] = v;
-        if (key === 'volume') SFX.setVolume(v);
-        valEl.textContent = key === 'volume' ? Math.round(v * 100) + '%' : v + suffix;
-      });
-    });
-
-    toggle.addEventListener('click', () => {
-      const open = body.classList.toggle('open');
-      toggle.textContent = open ? '▲ hide' : '▼ show';
+  /* ── Fighter cards (stats only, no ability select) ── */
+  _buildCards() {
+    const container=document.getElementById('bay-cards');
+    container.innerHTML='';
+    this.fighters.forEach((f,i)=>{
+      const card=document.createElement('div');
+      card.className='bay-card'; card.id=`bay-card-${i}`;
+      card.style.cssText=`background:${f.color}0d;border-color:${f.color}28;`;
+      const icon=AbilityRegistry.getAll().find(a=>a.key===f.abilityKey)?.icon??'?';
+      card.innerHTML=`
+        <div class="bay-header">
+          <div class="bay-dot" style="background:${f.color};box-shadow:0 0 6px ${f.color};"></div>
+          <div class="bay-name">${f.name}</div>
+          <div class="bay-icon" id="bay-icon-${i}">${icon}</div>
+        </div>
+        <div class="hp-track"><div class="hp-fill" id="hp-fill-${i}" style="width:100%;background:linear-gradient(90deg,${f.color},${f.glowColor});"></div></div>
+        <div class="hp-text" id="hp-text-${i}">${GameConfig.health} / ${GameConfig.health}</div>
+        <div class="cd-row">
+          <div class="cd-label">CD</div>
+          <div class="cd-track"><div class="cd-fill" id="cd-fill-${i}" style="width:0%;background:${f.color};"></div></div>
+        </div>
+        <div class="status-row" id="status-row-${i}"></div>`;
+      container.appendChild(card);
     });
   }
 
-  /* ── Fighter cards ── */
-  _buildCards() {
-    const container = document.getElementById('bay-cards');
-    container.innerHTML = '';
-    this.fighters.forEach((f, i) => {
-      const card = document.createElement('div');
-      card.className = 'bay-card';
-      card.id        = `bay-card-${i}`;
-      card.style.cssText = `background:${f.color}0d; border-color:${f.color}28;`;
+  /* ── Config panel: ability selects + sliders ── */
+  _buildConfigPanel() {
+    const body=document.getElementById('config-body');
+    const toggle=document.getElementById('cfg-toggle');
 
-      const abilityIcon = AbilityRegistry.getAll().find(a => a.key === f.abilityKey)?.icon ?? '?';
-      card.innerHTML = `
-        <div class="bay-header">
-          <div class="bay-dot" style="background:${f.color}; box-shadow:0 0 7px ${f.color};"></div>
-          <div class="bay-name">${f.name}</div>
-          <div class="bay-icon" id="bay-icon-${i}">${abilityIcon}</div>
-        </div>
-        <div class="hp-track">
-          <div class="hp-fill" id="hp-fill-${i}"
-            style="width:100%; background:linear-gradient(90deg,${f.color},${f.glowColor});"></div>
-        </div>
-        <div class="hp-text" id="hp-text-${i}">${GameConfig.health} / ${GameConfig.health}</div>
-        <div class="cd-row">
-          <div class="cd-label">Ability CD</div>
-          <div class="cd-track">
-            <div class="cd-fill" id="cd-fill-${i}" style="width:0%; background:${f.color};"></div>
-          </div>
-        </div>
+    // Ability selects
+    let html='<div class="cfg-section">Fighters</div>';
+    this.fighters.forEach((f,i)=>{
+      html+=`<div class="cfg-ability-row">
+        <label class="cfg-ability-label"><div class="bay-dot" style="background:${f.color};box-shadow:0 0 5px ${f.color};flex-shrink:0;width:8px;height:8px;border-radius:50%;"></div>${f.name}</label>
         <select class="ability-select" id="ability-sel-${i}"></select>
-        <div class="status-row" id="status-row-${i}"></div>
-      `;
-      container.appendChild(card);
+      </div>`;
+    });
 
-      const sel = document.getElementById(`ability-sel-${i}`);
-      AbilityRegistry.getAll().forEach(a => {
-        const opt   = document.createElement('option');
-        opt.value   = a.key;
-        opt.textContent = `${a.icon} ${a.name}`;
-        sel.appendChild(opt);
+    // Sliders
+    const sliders=[
+      {section:'General'},
+      {key:'volume',     label:'Volume',         min:0,   max:1,   step:0.05, suffix:''},
+      {key:'health',     label:'Health',          min:80,  max:500, step:20,   suffix:''},
+      {key:'speedMult',  label:'Speed',           min:0.5, max:2.5, step:0.1,  suffix:'×'},
+      {section:'Harpoon'},
+      {key:'harpoonBounces',  label:'Bounces',    min:3,  max:22,  step:1,   suffix:''},
+      {key:'harpoonCooldown', label:'Cooldown',   min:2,  max:10,  step:0.5, suffix:'s'},
+      {key:'harpoonDamage',   label:'Hit DMG',    min:5,  max:50,  step:5,   suffix:''},
+      {key:'harpoonSlam',     label:'Slam DMG',   min:10, max:80,  step:5,   suffix:''},
+      {section:'Parasite'},
+      {key:'parasiteDPS',    label:'DPS/parasite', min:1,  max:12,  step:0.5, suffix:''},
+      {key:'maxParasites',   label:'Max parasites',min:2,  max:15,  step:1,   suffix:''},
+      {section:'Minelayer'},
+      {key:'mineDamage',   label:'Explosion DMG', min:15, max:100, step:5,  suffix:''},
+      {key:'maxMines',     label:'Max mines',     min:2,  max:12,  step:1,  suffix:''},
+      {key:'mineTriggerR', label:'Trigger radius',min:20, max:70,  step:2,  suffix:''},
+      {key:'mineArmDelay', label:'Arm delay',     min:0.1,max:2,   step:0.05,suffix:'s'},
+    ];
+
+    sliders.forEach(d=>{
+      if(d.section){html+=`<div class="cfg-section">${d.section}</div>`;return;}
+      const disp=d.key==='volume'?Math.round(GameConfig[d.key]*100)+'%':GameConfig[d.key]+d.suffix;
+      html+=`<div class="cfg-row">
+        <label class="cfg-label">${d.label}</label>
+        <input type="range" class="cfg-slider" min="${d.min}" max="${d.max}" step="${d.step}" value="${GameConfig[d.key]}" data-cfg="${d.key}" data-suffix="${d.suffix}">
+        <span class="cfg-val" id="cfgv-${d.key}">${disp}</span>
+      </div>`;
+    });
+
+    body.innerHTML=html;
+
+    // Wire ability selects
+    this.fighters.forEach((f,i)=>{
+      const sel=document.getElementById(`ability-sel-${i}`);
+      AbilityRegistry.getAll().forEach(a=>{ const opt=document.createElement('option');opt.value=a.key;opt.textContent=`${a.icon} ${a.name}`;sel.appendChild(opt); });
+      sel.value=f.abilityKey;
+      sel.addEventListener('change',()=>{
+        f.abilityKey=sel.value;
+        const icon=AbilityRegistry.getAll().find(a=>a.key===sel.value)?.icon??'?';
+        document.getElementById(`bay-icon-${i}`).textContent=icon;
       });
-      sel.value = f.abilityKey;
-      sel.addEventListener('change', () => {
-        f.abilityKey = sel.value;
-        const icon = AbilityRegistry.getAll().find(a => a.key === sel.value)?.icon ?? '?';
-        document.getElementById(`bay-icon-${i}`).textContent = icon;
+    });
+
+    // Wire sliders
+    body.querySelectorAll('.cfg-slider').forEach(input=>{
+      const key=input.dataset.cfg, suffix=input.dataset.suffix;
+      const valEl=document.getElementById(`cfgv-${key}`);
+      input.addEventListener('input',()=>{
+        const v=parseFloat(input.value); GameConfig[key]=v;
+        if(key==='volume')SFX.setVolume(v);
+        valEl.textContent=key==='volume'?Math.round(v*100)+'%':v+suffix;
       });
+    });
+
+    toggle.addEventListener('click',()=>{
+      const open=body.classList.toggle('open');
+      toggle.textContent=open?'▲ hide':'▼ show';
     });
   }
 
   _buildLegend() {
-    const leg = document.getElementById('ability-legend');
-    leg.innerHTML = '';
-    AbilityRegistry.getAll().forEach(a => {
-      const el = document.createElement('div');
-      el.className = 'legend-entry';
-      el.innerHTML = `
-        <div class="legend-icon-box"
-          style="background:${a.color}1a; border:1px solid ${a.color}44;">${a.icon}</div>
-        <div>
-          <div class="legend-name" style="color:${a.color};">${a.name}</div>
-          <div class="legend-desc">${a.description}</div>
-        </div>`;
+    const leg=document.getElementById('ability-legend');
+    leg.innerHTML='';
+    AbilityRegistry.getAll().forEach(a=>{
+      const el=document.createElement('div'); el.className='legend-entry';
+      el.innerHTML=`<div class="legend-icon-box" style="background:${a.color}1a;border:1px solid ${a.color}44;">${a.icon}</div>
+        <div><div class="legend-name" style="color:${a.color};">${a.name}</div><div class="legend-desc">${a.description}</div></div>`;
       leg.appendChild(el);
     });
   }
 
   _bindButtons() {
-    document.getElementById('btn-start').addEventListener('click', () => {
-      if (this.game.state === 'running') return;
-      const { arena } = this.game;
-      const n = this.fighters.length;
-
-      // Place fighters evenly on a circle, starting from the top
-      const configs = this.fighters.map((f, i) => {
-        const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-        return {
-          name:      f.name,
-          color:     f.color,
-          glowColor: f.glowColor,
-          ability:   AbilityRegistry.create(f.abilityKey),
-          maxHealth: GameConfig.health,
-          blades:    f.blades,
-          pos:       arena.center.add(Vec2.fromAngle(angle).scale(115)),
-        };
-      });
-
+    document.getElementById('btn-start').addEventListener('click',()=>{
+      if(this.game.state==='running')return;
+      const {arena}=this.game, n=this.fighters.length;
+      const configs=this.fighters.map((f,i)=>({
+        name:f.name, color:f.color, glowColor:f.glowColor, blades:f.blades,
+        ability:AbilityRegistry.create(f.abilityKey),
+        maxHealth:GameConfig.health,
+        pos:arena.center.add(Vec2.fromAngle((i/n)*Math.PI*2-Math.PI/2).scale(115)),
+      }));
       this.game.start(configs);
       this._setSelDisabled(true);
       document.getElementById('winner-overlay').classList.remove('visible');
-      document.getElementById('btn-start').disabled = true;
-      document.getElementById('state-label').textContent = 'Battle!';
+      document.getElementById('btn-start').disabled=true;
+      document.getElementById('state-label').textContent='Battle!';
     });
 
-    document.getElementById('btn-reset').addEventListener('click', () => {
-      this.game.reset();
-      this._setSelDisabled(false);
-      document.getElementById('btn-start').disabled  = false;
-      document.getElementById('btn-start').textContent = '▶ Start Battle';
+    document.getElementById('btn-reset').addEventListener('click',()=>{
+      this.game.reset(); this._setSelDisabled(false);
+      document.getElementById('btn-start').disabled=false;
+      document.getElementById('btn-start').textContent='▶ Start';
       document.getElementById('winner-overlay').classList.remove('visible');
-      document.getElementById('state-label').textContent = 'Ready';
-      this.fighters.forEach((_f, i) => {
-        document.getElementById(`hp-fill-${i}`).style.width = '100%';
-        document.getElementById(`hp-text-${i}`).textContent =
-          `${GameConfig.health} / ${GameConfig.health}`;
-        document.getElementById(`cd-fill-${i}`).style.width = '0%';
-        document.getElementById(`status-row-${i}`).innerHTML = '';
+      document.getElementById('state-label').textContent='Ready';
+      this.fighters.forEach((_f,i)=>{
+        document.getElementById(`hp-fill-${i}`).style.width='100%';
+        document.getElementById(`hp-text-${i}`).textContent=`${GameConfig.health} / ${GameConfig.health}`;
+        document.getElementById(`cd-fill-${i}`).style.width='0%';
+        document.getElementById(`status-row-${i}`).innerHTML='';
       });
     });
   }
 
-  _setSelDisabled(v) {
-    this.fighters.forEach((_f, i) => {
-      document.getElementById(`ability-sel-${i}`).disabled = v;
-    });
-  }
+  _setSelDisabled(v){ this.fighters.forEach((_f,i)=>{ document.getElementById(`ability-sel-${i}`).disabled=v; }); }
 
-  /* ── Sync UI each frame ── */
-  _uiLoop() {
-    const tick = () => { requestAnimationFrame(tick); this._sync(); };
-    requestAnimationFrame(tick);
-  }
+  _uiLoop() { const t=()=>{requestAnimationFrame(t);this._sync();}; requestAnimationFrame(t); }
 
   _sync() {
-    const { game } = this;
-    const chip = (text, bg, fg, border) => {
-      const s = document.createElement('span');
-      s.className = 'chip';
-      s.style.cssText = `background:${bg}; color:${fg}; border:1px solid ${border};`;
-      s.textContent   = text;
-      return s;
-    };
-
-    game.bayblades.forEach((b, i) => {
-      const fill   = document.getElementById(`hp-fill-${i}`);
-      const text   = document.getElementById(`hp-text-${i}`);
-      const cdFill = document.getElementById(`cd-fill-${i}`);
-      const status = document.getElementById(`status-row-${i}`);
-      if (!fill) return;
-
-      const pct = Math.max(0, b.health / b.maxHealth);
-      fill.style.width = (pct * 100).toFixed(1) + '%';
-
-      // Dynamic health bar colour
-      const f = this.fighters[i];
-      if      (pct > 0.6) fill.style.background = `linear-gradient(90deg,${f.color},${f.glowColor})`;
-      else if (pct > 0.3) fill.style.background = 'linear-gradient(90deg,#aa8800,#ffcc00)';
-      else                fill.style.background = 'linear-gradient(90deg,#880022,#ff2244)';
-
-      text.textContent   = `${Math.ceil(Math.max(0, b.health))} / ${b.maxHealth}`;
-      cdFill.style.width = ((1 - b.ability.cdFraction) * 100).toFixed(1) + '%';
-
-      status.innerHTML = '';
-      if (b.parasites.length > 0) {
-        status.appendChild(chip(`🦠 ×${b.parasites.length}`, '#33ff8820', '#33ff88', '#33ff8840'));
-        status.appendChild(chip(`☠ ${b.poisonDPS.toFixed(1)}/s`, '#22aa5520', '#66ffaa', '#22aa5540'));
-      }
-      if (b.caughtBy) {
-        status.appendChild(chip('⚓ Hooked!', '#4488ff20', '#88bbff', '#4488ff40'));
-      }
-      if (b.ability.name === 'Minelayer' && b.ability._activeMineCount > 0) {
-        status.appendChild(chip(`💣 ×${b.ability._activeMineCount}`, '#ff660020', '#ff9944', '#ff660040'));
-      }
-      if (!b.alive) {
-        status.appendChild(chip('💀 KO', '#ff224420', '#ff6688', '#ff224440'));
-      }
+    const {game}=this;
+    const chip=(text,bg,fg,border)=>{ const s=document.createElement('span');s.className='chip';s.style.cssText=`background:${bg};color:${fg};border:1px solid ${border};`;s.textContent=text;return s; };
+    game.blades.forEach((b,i)=>{
+      const fill=document.getElementById(`hp-fill-${i}`),text=document.getElementById(`hp-text-${i}`),cdFill=document.getElementById(`cd-fill-${i}`),status=document.getElementById(`status-row-${i}`);
+      if(!fill)return;
+      const pct=Math.max(0,b.health/b.maxHealth);
+      fill.style.width=(pct*100).toFixed(1)+'%';
+      const f=this.fighters[i];
+      if(pct>0.6)fill.style.background=`linear-gradient(90deg,${f.color},${f.glowColor})`;
+      else if(pct>0.3)fill.style.background='linear-gradient(90deg,#aa8800,#ffcc00)';
+      else fill.style.background='linear-gradient(90deg,#880022,#ff2244)';
+      text.textContent=`${Math.ceil(Math.max(0,b.health))} / ${b.maxHealth}`;
+      cdFill.style.width=((1-b.ability.cdFraction)*100).toFixed(1)+'%';
+      status.innerHTML='';
+      if(b.parasites.length>0){ status.appendChild(chip(`🦠×${b.parasites.length}`,'#33ff8820','#33ff88','#33ff8840')); status.appendChild(chip(`☠${b.poisonDPS.toFixed(1)}/s`,'#22aa5520','#66ffaa','#22aa5540')); }
+      if(b.caughtBy)status.appendChild(chip('⚓Hooked!','#4488ff20','#88bbff','#4488ff40'));
+      if(b.ability.name==='Minelayer'&&b.ability._activeMineCount>0)status.appendChild(chip(`💣×${b.ability._activeMineCount}`,'#ff660020','#ff9944','#ff660040'));
+      if(!b.alive)status.appendChild(chip('💀KO','#ff224420','#ff6688','#ff224440'));
     });
-
-    // Winner overlay
-    if (game.state === 'ended') {
-      const overlay = document.getElementById('winner-overlay');
-      if (!overlay.classList.contains('visible')) {
+    if(game.state==='ended'){
+      const overlay=document.getElementById('winner-overlay');
+      if(!overlay.classList.contains('visible')){
         overlay.classList.add('visible');
-        const wt = document.getElementById('winner-text');
-        if (game.winner) {
-          wt.textContent = `${game.winner.name} Wins!`;
-          wt.style.color = game.winner.glowColor;
-        } else {
-          wt.textContent = 'Draw!';
-          wt.style.color = '#ffffff';
-        }
-        document.getElementById('state-label').textContent = 'Ended';
+        const wt=document.getElementById('winner-text');
+        wt.textContent=game.winner?`${game.winner.name} Wins!`:'Draw!';
+        wt.style.color=game.winner?game.winner.glowColor:'#ffffff';
+        document.getElementById('state-label').textContent='Ended';
         this._setSelDisabled(false);
-        const btn = document.getElementById('btn-start');
-        btn.disabled    = false;
-        btn.textContent = '▶ Play Again';
+        const btn=document.getElementById('btn-start');
+        btn.disabled=false; btn.textContent='▶ Play Again';
       }
     }
   }
@@ -2123,12 +1387,7 @@ class UI {
 /* ═══════════════════════════════════════════════════
    BOOTSTRAP
 ═══════════════════════════════════════════════════ */
-
-window.addEventListener('load', () => {
-  const canvas = document.getElementById('arena');
-  const game   = new Game(canvas);
-  new UI(game);
-});
+window.addEventListener('load',()=>{ const game=new Game(document.getElementById('arena')); new UI(game); });
 </script>
 </body>
 </html>
